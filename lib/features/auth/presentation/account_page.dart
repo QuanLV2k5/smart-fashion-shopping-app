@@ -74,6 +74,11 @@ class AccountPage extends ConsumerWidget {
               ),
             ),
             AuthButton(
+              'Địa chỉ giao hàng',
+              secondary: true,
+              onPressed: () => context.push('/addresses'),
+            ),
+            AuthButton(
               'Đăng xuất',
               secondary: true,
               onPressed: () => context.go('/logout'),

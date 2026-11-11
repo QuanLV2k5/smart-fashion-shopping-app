@@ -12,6 +12,8 @@ import '../../features/auth/presentation/confirm_email_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import 'auth_redirect.dart';
+import '../../features/addresses/presentation/addresses_page.dart';
+import '../../features/addresses/presentation/address_form_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
@@ -25,14 +27,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ref.read(authSessionProvider).value ??
           ref.read(authRepositoryProvider).currentUser;
       final path = state.matchedLocation;
-      final protected = path == '/account' || path == '/logout';
+      final protected =
+          path == '/account' ||
+          path == '/logout' ||
+          path == '/addresses' ||
+          path.startsWith('/addresses/');
       final authForm = const {
         '/login',
         '/register',
         '/confirm-email',
       }.contains(path);
       if (user == null && protected) {
-        return '/login?next=${Uri.encodeComponent('/account')}';
+        final destination =
+            path == '/addresses/select' ||
+                (path.startsWith('/addresses/') &&
+                    state.uri.queryParameters['from'] == 'cart')
+            ? '/addresses/select'
+            : path.startsWith('/addresses')
+            ? '/addresses'
+            : '/account';
+        return '/login?next=${Uri.encodeComponent(destination)}';
       }
       if (user != null && authForm) {
         return authDestination(state.uri.queryParameters['next']);
@@ -90,6 +104,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
+      GoRoute(
+        path: '/addresses',
+        builder: (context, state) => const AddressesPage(),
+      ),
+      GoRoute(
+        path: '/addresses/select',
+        builder: (context, state) => const AddressesPage(selecting: true),
+      ),
+      GoRoute(
+        path: '/addresses/new',
+        builder: (context, state) => AddressFormPage(
+          returnToSelection: state.uri.queryParameters['from'] == 'cart',
+        ),
+      ),
+      GoRoute(
+        path: '/addresses/:id/edit',
+        builder: (context, state) => AddressFormPage(
+          addressId: state.pathParameters['id'],
+          returnToSelection: state.uri.queryParameters['from'] == 'cart',
+        ),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: SafeArea(
