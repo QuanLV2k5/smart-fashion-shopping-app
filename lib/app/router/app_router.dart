@@ -11,6 +11,7 @@ import '../../features/auth/presentation/auth_providers.dart';
 import '../../features/auth/presentation/confirm_email_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
+import '../../features/profile/presentation/profile_page.dart';
 import 'auth_redirect.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -25,14 +26,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ref.read(authSessionProvider).value ??
           ref.read(authRepositoryProvider).currentUser;
       final path = state.matchedLocation;
-      final protected = path == '/account' || path == '/logout';
+      final protected =
+          path == '/account' ||
+          path.startsWith('/account/') ||
+          path == '/logout';
       final authForm = const {
         '/login',
         '/register',
         '/confirm-email',
       }.contains(path);
       if (user == null && protected) {
-        return '/login?next=${Uri.encodeComponent('/account')}';
+        return '/login?next=${Uri.encodeComponent(path == '/account' ? '/account' : path)}';
       }
       if (user != null && authForm) {
         return authDestination(state.uri.queryParameters['next']);
@@ -65,6 +69,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/account',
         builder: (context, state) => const AccountPage(),
+      ),
+      GoRoute(
+        path: '/account/profile',
+        builder: (context, state) => const ProfilePage(),
       ),
       GoRoute(path: '/logout', builder: (context, state) => const LogoutPage()),
       GoRoute(

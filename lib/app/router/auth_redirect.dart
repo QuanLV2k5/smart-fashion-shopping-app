@@ -4,7 +4,8 @@ String authDestination(String? requested) {
   if (uri == null || uri.hasScheme || uri.hasAuthority || uri.hasFragment) {
     return '/account';
   }
-  if (const {'/', '/account', '/cart'}.contains(uri.path) && !uri.hasQuery) {
+  if (const {'/', '/account', '/account/profile', '/cart'}.contains(uri.path) &&
+      !uri.hasQuery) {
     return uri.path;
   }
   if (RegExp(r'^/products/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path) &&
