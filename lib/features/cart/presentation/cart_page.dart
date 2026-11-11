@@ -10,6 +10,8 @@ import '../../../core/widgets/shop_page_scaffold.dart';
 import '../../catalog/presentation/widgets/catalog_widgets.dart';
 import '../domain/cart.dart';
 import 'cart_providers.dart';
+import '../../addresses/presentation/address_providers.dart';
+import '../../addresses/presentation/addresses_page.dart' show addressText;
 
 class CartPage extends ConsumerWidget {
   const CartPage({super.key});
@@ -41,6 +43,8 @@ class CartPage extends ConsumerWidget {
       );
     }
     final state = ref.watch(cartProvider(userId));
+    final addresses = ref.watch(addressBookProvider).asData?.value;
+    final selected = addresses?.selected;
     final cart = state.value;
     final actions = ref.watch(cartActionsProvider(userId));
     final controller = ref.read(cartActionsProvider(userId).notifier);
@@ -72,6 +76,14 @@ class CartPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: AppSpacing.md,
             children: [
+              OutlinedButton(
+                onPressed: () => context.push('/addresses/select'),
+                child: Text(
+                  selected == null
+                      ? 'Chọn địa chỉ giao hàng'
+                      : '${selected.details.recipientName} · ${selected.details.phone}\n${addressText(selected)}',
+                ),
+              ),
               if (busy) const LinearProgressIndicator(minHeight: 2),
               if (state.hasError || actions.failure != null)
                 CatalogMessage(
