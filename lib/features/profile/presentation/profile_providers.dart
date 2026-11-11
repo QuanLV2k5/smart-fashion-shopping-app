@@ -11,23 +11,37 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return SupabaseProfileRepository(client);
 });
 
+final profileUserIdProvider = Provider<String?>((ref) {
+  final session = ref.watch(authSessionProvider);
+  return session.hasValue
+      ? session.value?.id
+      : ref.watch(authRepositoryProvider).currentUser?.id;
+});
+
 /// Provider tải và quản lý thông tin hồ sơ của tài khoản đang đăng nhập.
 /// Tự động trả về null khi người dùng đăng xuất để bảo mật dữ liệu.
 final userProfileProvider = FutureProvider.autoDispose<UserProfile?>((
   ref,
 ) async {
-  final session = ref.watch(authSessionProvider);
-  final user = session.value ?? ref.read(authRepositoryProvider).currentUser;
-  if (user == null) return null;
+  if (ref.watch(profileUserIdProvider) == null) return null;
 
   final repository = ref.watch(profileRepositoryProvider);
   return repository.fetchProfile();
-});
+}, retry: (_, _) => null);
 
 /// Controller quản lý luồng lưu/cập nhật hồ sơ và upload ảnh đại diện.
 class ProfileController extends AsyncNotifier<void> {
+  int _revision = 0;
   @override
-  void build() {}
+  void build() {
+    ref.watch(profileUserIdProvider);
+    _revision++;
+  }
+
+  bool _active(String userId, int revision) =>
+      ref.mounted &&
+      revision == _revision &&
+      ref.read(profileUserIdProvider) == userId;
 
   /// Cập nhật họ tên, số điện thoại hoặc đường dẫn avatar.
   /// Trả về true nếu thành công, false nếu có lỗi.
@@ -36,7 +50,9 @@ class ProfileController extends AsyncNotifier<void> {
     String? phone,
     String? avatarPath,
   }) async {
-    if (state.isLoading) return false;
+    final userId = ref.read(profileUserIdProvider);
+    if (state.isLoading || userId == null) return false;
+    final revision = _revision;
     state = const AsyncLoading();
     try {
       final repo = ref.read(profileRepositoryProvider);
@@ -45,13 +61,13 @@ class ProfileController extends AsyncNotifier<void> {
         phone: phone,
         avatarPath: avatarPath,
       );
-      if (ref.mounted) {
+      if (_active(userId, revision)) {
         state = const AsyncData(null);
         ref.invalidate(userProfileProvider);
       }
-      return true;
+      return _active(userId, revision);
     } catch (e, st) {
-      if (ref.mounted) state = AsyncError(e, st);
+      if (_active(userId, revision)) state = AsyncError(e, st);
       return false;
     }
   }
@@ -62,7 +78,9 @@ class ProfileController extends AsyncNotifier<void> {
     required String fileName,
     required String mimeType,
   }) async {
-    if (state.isLoading) return null;
+    final userId = ref.read(profileUserIdProvider);
+    if (state.isLoading || userId == null) return null;
+    final revision = _revision;
     state = const AsyncLoading();
     try {
       final repo = ref.read(profileRepositoryProvider);
@@ -71,10 +89,11 @@ class ProfileController extends AsyncNotifier<void> {
         fileName: fileName,
         mimeType: mimeType,
       );
-      if (ref.mounted) state = const AsyncData(null);
+      if (!_active(userId, revision)) return null;
+      state = const AsyncData(null);
       return path;
     } catch (e, st) {
-      if (ref.mounted) state = AsyncError(e, st);
+      if (_active(userId, revision)) state = AsyncError(e, st);
       return null;
     }
   }

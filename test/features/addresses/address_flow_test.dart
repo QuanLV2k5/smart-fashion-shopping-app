@@ -99,6 +99,42 @@ Future<void> capture(WidgetTester tester, String name) async {
 }
 
 void main() {
+  testWidgets('tích hợp Account giữ cả Profile và Sổ địa chỉ', (tester) async {
+    final repo = FakeAddressRepository()
+      ..rows.add(fixtureAddress('a', 'test-id'));
+    final container = await pumpApp(tester, repo, route: '/account');
+    await tester.tap(find.byKey(const ValueKey('edit_profile_button')));
+    await tester.pumpAndSettle();
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/account/profile',
+    );
+    container.read(appRouterProvider).go('/account');
+    await tester.pumpAndSettle();
+    await tapText(tester, 'Sổ địa chỉ');
+    expect(find.text('Địa chỉ giao hàng'), findsOneWidget);
+    expect(container.read(appRouterProvider).canPop(), isTrue);
+    expect(find.text('Sửa địa chỉ'), findsOneWidget);
+  });
+
+  testWidgets('guest Profile deep link giữ đúng đích đăng nhập sau tích hợp', (
+    tester,
+  ) async {
+    final container = await pumpApp(
+      tester,
+      FakeAddressRepository(),
+      route: '/account/profile',
+      signedIn: false,
+    );
+    final uri = container
+        .read(appRouterProvider)
+        .routeInformationProvider
+        .value
+        .uri;
+    expect(uri.path, '/login');
+    expect(uri.queryParameters['next'], '/account/profile');
+    expect(authDestination('/account/profile'), '/account/profile');
+  });
   setUpAll(() async {
     final fonts = FontLoader('BeVietnamPro');
     for (final weight in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
@@ -338,7 +374,7 @@ void main() {
           ),
         ]);
       final container = await pumpApp(tester, repo, route: '/account');
-      await tapText(tester, 'Địa chỉ giao hàng');
+      await tapText(tester, 'Sổ địa chỉ');
       expect(container.read(appRouterProvider).canPop(), isTrue);
       expect(find.text('Thêm địa chỉ'), findsOneWidget);
       expect(find.text('Sửa địa chỉ'), findsNWidgets(2));

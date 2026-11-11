@@ -25,6 +25,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   String? _avatarPathOrUrl;
   bool _initialized = false;
   bool _savedSuccess = false;
+  String? _profileOwnerId;
 
   @override
   void initState() {
@@ -50,7 +51,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ? profile!.fullName
         : fallbackName;
     _phoneController.text = profile?.phone ?? '';
-    _avatarPathOrUrl = profile?.avatarUrl ?? profile?.avatarPath;
+    // Keep the stored identifier; a public URL is only for rendering.
+    _avatarPathOrUrl = profile?.avatarPath ?? profile?.avatarUrl;
     _initialized = true;
   }
 
@@ -97,8 +99,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final profileAsync = ref.watch(userProfileProvider);
     final profileState = ref.watch(profileControllerProvider);
 
+    if (_profileOwnerId != sessionUser?.id) {
+      _profileOwnerId = sessionUser?.id;
+      _initialized = false;
+      _savedSuccess = false;
+      _nameController.clear();
+      _phoneController.clear();
+      _avatarPathOrUrl = null;
+    }
+    final profile = profileAsync.asData?.value;
+    final loaded = profile != null && profile.id == sessionUser?.id;
+
     // Điền dữ liệu từ profile hoặc fallback từ auth session
     profileAsync.whenData((profile) {
+      if (profile?.id != sessionUser?.id) return;
       _populateUserData(
         profile,
         sessionUser?.email ?? '',
@@ -107,17 +121,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     });
 
     final isLoading = profileState.isLoading;
+    final blocked = isLoading || !loaded;
     final errorMessage = profileState.hasError
         ? (profileState.error is ProfileFailure
               ? (profileState.error! as ProfileFailure).message
               : profileState.error.toString())
         : null;
 
-    final initials = (_nameController.text.isNotEmpty
-        ? _nameController.text.trim()[0].toUpperCase()
-        : (sessionUser?.fullName.isNotEmpty == true
-              ? sessionUser!.fullName.trim()[0].toUpperCase()
-              : 'U'));
+    final trimmedName = _nameController.text.trim();
+    final fallbackName = sessionUser?.fullName.trim() ?? '';
+    final initialsName = trimmedName.isNotEmpty ? trimmedName : fallbackName;
+    final initials = initialsName.isEmpty
+        ? 'U'
+        : initialsName.characters.first.toUpperCase();
+    final avatarDisplay =
+        _avatarPathOrUrl != null && _avatarPathOrUrl == profile?.avatarPath
+        ? profile?.avatarUrl ?? _avatarPathOrUrl
+        : _avatarPathOrUrl;
 
     return AuthScaffold(
       title: 'Hồ sơ cá nhân',
@@ -131,9 +151,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       action: AuthButton(
         'Lưu thay đổi',
         loading: isLoading,
-        onPressed: isLoading ? null : _handleSave,
+        onPressed: blocked ? null : _handleSave,
       ),
       children: [
+        if (profileAsync.isLoading) const LinearProgressIndicator(),
+        if (profileAsync.hasError) ...[
+          const AuthNotice(
+            'Chưa tải được hồ sơ. Vui lòng thử lại trước khi chỉnh sửa.',
+            error: true,
+          ),
+          TextButton(
+            onPressed: () => ref.invalidate(userProfileProvider),
+            child: const Text('Tải lại hồ sơ'),
+          ),
+        ],
         // Khung thông báo thành công (Figma ProfileSaved 4:383)
         if (_savedSuccess)
           const AuthNotice(
@@ -158,7 +189,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   border: Border.all(color: AppColors.outline, width: 2),
                 ),
                 child: buildAvatarDisplay(
-                  avatarPathOrUrl: _avatarPathOrUrl,
+                  avatarPathOrUrl: avatarDisplay,
                   initials: initials,
                   size: 96,
                   textStyle: Theme.of(context).textTheme.headlineMedium
@@ -169,7 +200,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ),
               InkWell(
-                onTap: isLoading ? null : _openAvatarSelector,
+                onTap: blocked ? null : _openAvatarSelector,
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   width: 32,
@@ -203,7 +234,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 hint: 'Nguyễn Văn A',
                 controller: _nameController,
                 inputKey: const ValueKey('profile_full_name'),
-                enabled: !isLoading,
+                enabled: !blocked,
                 validator: ProfileValidation.validateFullName,
               ),
               const SizedBox(height: AppSpacing.md),
@@ -213,7 +244,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 controller: _phoneController,
                 inputKey: const ValueKey('profile_phone'),
                 keyboardType: TextInputType.phone,
-                enabled: !isLoading,
+                enabled: !blocked,
                 validator: ProfileValidation.validatePhone,
               ),
               const SizedBox(height: AppSpacing.md),

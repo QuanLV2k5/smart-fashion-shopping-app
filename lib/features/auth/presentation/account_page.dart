@@ -58,15 +58,18 @@ class AccountPage extends ConsumerWidget {
     }
 
     final profileAsync = ref.watch(userProfileProvider);
-    final profile = profileAsync.value;
+    final loadedProfile = profileAsync.asData?.value;
+    final profile = loadedProfile?.id == user.id ? loadedProfile : null;
 
-    final displayName = profile?.fullName.isNotEmpty == true
-        ? profile!.fullName
-        : (user.fullName.isNotEmpty ? user.fullName : 'bạn');
+    final profileName = profile?.fullName.trim() ?? '';
+    final authName = user.fullName.trim();
+    final displayName = profileName.isNotEmpty
+        ? profileName
+        : (authName.isNotEmpty ? authName : 'bạn');
 
     final avatarUrl = profile?.avatarUrl ?? profile?.avatarPath;
     final initials = displayName.trim().isNotEmpty
-        ? displayName.trim()[0].toUpperCase()
+        ? displayName.trim().characters.first.toUpperCase()
         : 'U';
 
     return StoreScaffold(

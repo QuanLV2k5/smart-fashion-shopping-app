@@ -12,6 +12,7 @@ class FakeProfileRepository implements ProfileRepository {
   int fetchCalls = 0;
   int updateCalls = 0;
   int uploadCalls = 0;
+  Future<UserProfile?> Function()? onFetch;
 
   Future<UserProfile> Function(
     String fullName,
@@ -29,7 +30,7 @@ class FakeProfileRepository implements ProfileRepository {
   @override
   Future<UserProfile?> fetchProfile() async {
     fetchCalls++;
-    return _profile;
+    return onFetch == null ? _profile : await onFetch!();
   }
 
   @override
@@ -45,20 +46,15 @@ class FakeProfileRepository implements ProfileRepository {
       _controller.add(_profile);
       return updated;
     }
-    _profile =
-        (_profile ??
-                const UserProfile(
-                  id: 'test-user-id',
-                  email: 'test@example.com',
-                  fullName: '',
-                ))
-            .copyWith(
-              fullName: fullName,
-              phone: phone,
-              avatarPath: avatarPath,
-              avatarUrl: avatarPath,
-              updatedAt: DateTime.now(),
-            );
+    _profile = UserProfile(
+      id: _profile?.id ?? 'test-user-id',
+      email: _profile?.email ?? 'test@example.com',
+      fullName: fullName.trim(),
+      phone: phone?.trim().isEmpty == true ? null : phone?.trim(),
+      avatarPath: avatarPath,
+      avatarUrl: avatarPath,
+      updatedAt: DateTime.now(),
+    );
     _controller.add(_profile);
     return _profile!;
   }

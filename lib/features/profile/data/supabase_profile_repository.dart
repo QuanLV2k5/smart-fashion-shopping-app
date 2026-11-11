@@ -21,6 +21,8 @@ class SupabaseProfileRepository implements ProfileRepository {
 
   String? _resolveAvatarUrl(String? avatarPath) {
     if (avatarPath == null || avatarPath.isEmpty) return null;
+    // Presets are local identifiers, not objects in the avatars bucket.
+    if (avatarPath.startsWith('preset:')) return null;
     if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
       return avatarPath;
     }
@@ -98,10 +100,9 @@ class SupabaseProfileRepository implements ProfileRepository {
       final updatePayload = <String, dynamic>{
         'full_name': fullName.trim(),
         'phone': (phone == null || phone.trim().isEmpty) ? null : phone.trim(),
+        // The form submits a complete profile; null explicitly resets an avatar.
+        'avatar_path': avatarPath,
       };
-      if (avatarPath != null) {
-        updatePayload['avatar_path'] = avatarPath;
-      }
 
       final data = await _backend
           .from('profiles')
@@ -111,11 +112,17 @@ class SupabaseProfileRepository implements ProfileRepository {
           .single()
           .timeout(const Duration(seconds: 25));
 
+      if (_backend.auth.currentUser?.id != currentUser.id) {
+        throw const ProfileFailure(
+          'Phiên đăng nhập đã thay đổi. Vui lòng mở lại hồ sơ.',
+        );
+      }
+
       // Đồng bộ họ tên sang metadata của AuthUser để header/session khớp ngay
       try {
-        await _backend.auth.updateUser(
-          UserAttributes(data: {'full_name': fullName.trim()}),
-        );
+        await _backend.auth
+            .updateUser(UserAttributes(data: {'full_name': fullName.trim()}))
+            .timeout(const Duration(seconds: 10));
       } catch (_) {
         // Không chặn cập nhật profile nếu sync metadata gặp timeout
       }
