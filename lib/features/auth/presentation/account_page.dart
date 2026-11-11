@@ -175,17 +175,8 @@ class AccountPage extends ConsumerWidget {
                   _AccountMenuItem(
                     icon: Icons.location_on_outlined,
                     title: 'Sổ địa chỉ',
-                    subtitle: 'Quản lý địa chỉ giao hàng (P02)',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Tính năng sổ địa chỉ đang được hoàn thiện (P02).',
-                          ),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    subtitle: 'Quản lý địa chỉ giao hàng',
+                    onTap: () => context.push('/addresses'),
                   ),
                   const Divider(height: 1, color: AppColors.outline),
                   _AccountMenuItem(

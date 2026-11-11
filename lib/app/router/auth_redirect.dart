@@ -4,7 +4,14 @@ String authDestination(String? requested) {
   if (uri == null || uri.hasScheme || uri.hasAuthority || uri.hasFragment) {
     return '/account';
   }
-  if (const {'/', '/account', '/account/profile', '/cart'}.contains(uri.path) &&
+  if (const {
+        '/',
+        '/account',
+        '/account/profile',
+        '/cart',
+        '/addresses',
+        '/addresses/select',
+      }.contains(uri.path) &&
       !uri.hasQuery) {
     return uri.path;
   }
