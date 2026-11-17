@@ -1,6 +1,6 @@
-# Definition of Done — bản dự thảo P01
+# Definition of Done — bàn giao Sprint 1 và kiểm thử mở rộng
 
-Trạng thái: **Pending Review**. Phúc soạn ngày 11/11/2026; Quân và Hải chưa xác nhận. Liên quan [Issue #9](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/9). Không coi tài liệu này là quyết định đã được cả ba phê duyệt.
+Bản P01 của Phúc đã được Hải review và tích hợp qua PR16. Bản điều chỉnh 17/11 theo yêu cầu đơn giản hóa của Quân đang đưa qua PR hồ sơ chốt S1; có hiệu lực sau peer review/merge. Xem [quyết định, thay đổi AC và rủi ro giữ lại](sprint-1-closeout-decision.md). Không coi tài liệu là phê duyệt giảng viên.
 
 ## Điều kiện chung
 
@@ -16,7 +16,7 @@ Trạng thái: **Pending Review**. Phúc soạn ngày 11/11/2026; Quân và Hả
 | Domain/repository/controller thay đổi | Unit test cho quy tắc, lỗi và race/account isolation liên quan; mock không được coi là xác minh RLS thật |
 | UI/điều hướng thay đổi | Widget test hành vi chính, lỗi/empty/loading; ảnh hoặc video trên 360/390/430 px, keyboard và chữ lớn phù hợp |
 | Luồng nhiều module/backend | Integration hoặc manual có bước tái hiện, commit/build, môi trường; ghi rõ chưa có automated integration nếu đúng |
-| RLS | A/B và anon qua API bằng JWT người dùng, đủ SELECT/INSERT/UPDATE/DELETE, kiểm tra cả USING/WITH CHECK; ghi kết quả thật, không dùng service-role làm bằng chứng quyền người dùng |
+| RLS S1 | Chấp nhận SQL/RLS chạy thật cloud với anon/A/B/admin, USING/WITH CHECK và rollback; kết hợp catalog REST guest và xác nhận app. SQL role/claim không được gọi là REST JWT. Kiểm thử HTTP JWT sâu/CRUD/mạng ở #21 trước #22, giữ trạng thái chưa chạy; lỗi quyền thật vẫn chặn bàn giao |
 | Code Flutter | `dart format --output=none --set-exit-if-changed lib test tool`, `flutter analyze --no-pub`, toàn bộ `flutter test --no-pub`; dependency đổi phải resolve lockfile và giải thích |
 | Build/CI | Build APK debug/web theo phạm vi và workflow hiện có; CI xanh ở HEAD PR. Không dùng kết quả commit cũ thay kết quả commit mới |
 | Chỉ tài liệu | Kiểm tra Markdown, link nội bộ/Issue, bảng và tính nhất quán bằng chứng; build cục bộ có thể ghi N/A kèm lý do. CI repository vẫn chạy theo cấu hình hiện có |
@@ -29,7 +29,7 @@ Lỗi test/build không được bỏ qua bằng cách xóa test hoặc nới as
 2. PR dùng [mẫu repository](../../.github/pull_request_template.md), `Refs #N`, kết quả kiểm tra thật, ảnh nếu đổi UI, giới hạn và rủi ro; chỉ dùng từ khóa đóng Issue khi đủ AC và review thật.
 3. Theo vòng review dự kiến: Hải review Quân, Phúc review Hải, Quân review Phúc; cần ít nhất một thành viên khác approve. Thay đổi Account phối hợp Hải, router/contract/backend phối hợp Quân. Không tự coi im lặng là approval.
 4. Chủ repository xác nhận required checks/reviews và giải quyết discussion/conflict trước merge; tác giả không tự xác nhận branch protection đã bật nếu chưa kiểm chứng.
-5. Chỉ đề nghị đóng Issue khi mọi AC đạt với evidence, peer review thật và tích hợp vào nhánh đích. Cập nhật Actual hours bằng số thật do người làm xác nhận; ghi carryover rõ nếu chưa đạt.
+5. Chỉ đề nghị đóng Issue khi mọi AC đạt với evidence, peer review thật và tích hợp vào nhánh đích. Ghi actual theo dữ liệu được xác nhận: S1 8h/người, tổng 24h, số tổng hồi cứu; không tự phân bổ giả theo Issue. Ghi carryover rõ và giữ Issue theo dõi mở; không mô tả việc đã chuyển tiếp là Passed/Approved.
 
 ## Khi còn blocker/chưa kiểm chứng
 
@@ -40,5 +40,5 @@ Giữ trạng thái Planned/Not Run/Blocked/Failed đúng thực tế. Ghi thi�
 | Thành viên | Vai trò | Kết quả/ngày/bằng chứng |
 | --- | --- | --- |
 | Phúc | Người soạn; tự rà | Đã chuẩn bị tài liệu; chưa phải peer approval |
-| Quân | Review CI, backend, merge và tính khả thi | Pending Review |
-| Hải | Review UI, Auth/Profile và độ phủ test | Pending Review |
+| Quân | Review CI/backend, merge và yêu cầu điều chỉnh | PR16 đã merge; yêu cầu đơn giản hóa 17/11; actual 8h/người được xác nhận |
+| Hải | Peer review UI/Auth/Profile và tài liệu | PR16 approve đúng HEAD 15f9198; bản chốt mới cần review tại HEAD mới |
