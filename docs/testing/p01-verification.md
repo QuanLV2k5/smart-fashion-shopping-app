@@ -1,5 +1,7 @@
 # P01 — nguồn, kết quả kiểm tra và bàn giao
 
+**Cập nhật 17/11:** tài liệu gốc đã được Phúc đưa vào PR #14, HEAD `a504ba1`, CI đạt, còn Draft/chưa peer approval. Nhánh `docs/replan-delivery-25nov` ghép nguyên commit này để review cùng bản cập nhật. Các đoạn “chưa commit/push/tạo PR” bên dưới là lịch sử 11/11. Main `5dc2b77` chạy lại 131 test đạt; xem [matrix](test-matrix.md), [kiểm kê S1](sprint-1-closure-2026-11-17.md), [R4](../planning/Ke-hoach-hoan-thien-25-11-2026.md). DoD/UI/đồng thuận và Actual hours/SP vẫn cần xác nhận; không tự đóng #9.
+
 Người yêu cầu/soạn: Đinh Công Phúc (DinhCongPhuc). Ngày 11/11/2026, nhánh `feat/p01-testing-dod`, [Issue #9](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/9). Tài liệu là bản dự thảo chờ Quân/Hải review; không tự khai đã đáp ứng AC yêu cầu cả ba review.
 
 ## Mục lục tài liệu P01

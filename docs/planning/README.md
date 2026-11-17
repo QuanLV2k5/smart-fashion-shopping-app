@@ -1,10 +1,13 @@
 # Yêu cầu và kế hoạch nhóm
 
+**Kế hoạch thực hiện hiện hành:** [R4 — hoàn thiện ứng dụng ngày 25/11/2026](Ke-hoach-hoan-thien-25-11-2026.md).
+R4 được lập ngày 17/11 theo yêu cầu của Quân. R3 bên dưới được giữ làm baseline lịch sử.
+
 Ba file cạnh tài liệu này được copy nguyên văn từ thư mục SmartFashion-Planning
 của Quân ngày 10/11/2026 để bản clone của Hải/Phúc cũng đọc được yêu cầu.
 
 - [Brief Figma và phạm vi sản phẩm](Prompt-Figma-Smart-Fashion.md)
-- [Kế hoạch hiện hành R3](Ke-hoach-do-an-04-11-den-01-12-2026.md)
+- [Baseline R3, trước điều chỉnh ngày 17/11](Ke-hoach-do-an-04-11-den-01-12-2026.md)
 - [Nhật ký điều chỉnh 04/11](Nhat-ky-dieu-chinh-uoc-luong-2026-11-04.md)
 
 Không sửa ước lượng hoặc phân công trong lần copy. Issue trên GitHub chứa

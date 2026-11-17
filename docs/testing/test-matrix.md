@@ -1,5 +1,24 @@
 # Test matrix Sprint 1 — P01
 
+## Đối chiếu ngày 17/11/2026
+
+Bảng 42 ca phía dưới giữ snapshot 11/11 do Phúc lập. Các câu “H01/P02 chưa vào main”, “PR11/12 còn mở” chỉ đúng thời điểm đó. Cập nhật hiện hành:
+
+| Test ID/phạm vi | Kết quả bổ sung | Giới hạn/bằng chứng |
+|---|---|---|
+| PROF-02, PROF-03 | Passed automated test tương ứng | Main 5dc2b77, profile_flow/profile_regressions, 17/11 |
+| ADDR-03,04,05,07 | Passed automated test tương ứng | Main 5dc2b77; addresses 51 test đạt, validation/delete/selection/late response |
+| CAT-04 | Passed phần đọc fixture cloud | REST guest SF01/SF02/5 variants/448000 và SQL seed 12 sản phẩm; chưa chạy lại đủ mọi bước UI hôm nay |
+| AUTH-05, PROF-01, NAV-03, FLOW-01 | Có bằng chứng một phần | Quân từng xác nhận Auth/Android/giỏ/bản tích hợp, 17/11 xác nhận ba máy chạy; cần log từng bước khi retest |
+| REST JWT A/B | Chưa xác minh đủ bằng REST JWT thật | Foundation SQL/RLS cloud PASS 17/11 với role/claim trong BEGIN/ROLLBACK; SQL không thay REST |
+| NET-01, ADDR-06, RESP-02 | Chưa có kết quả mới đủ bước | Mock/widget không thay mất mạng/browser/thiết bị thực |
+| QA-01 | CI main/review code đạt; hồ sơ chờ | CI 43066716263; PR10 Hải/Phúc approve, PR13 Phúc approve, PR15 Phúc approve; PR14 Draft |
+| QA-02 | Đang chốt hồ sơ | Retro 13/11 và ba máy chạy do Quân xác nhận 17/11; action Retro dự thảo, actual/Poker/SP chưa cung cấp |
+
+Nguồn: [kiểm kê S1](sprint-1-closure-2026-11-17.md), [report giỏ](sprint-1-cart-report.md). Không tính lại tổng Passed trên 42 ca khi nhiều ca mới có một phần bằng chứng. Main hiện tại: **131/131 test đạt**, analyzer/format đạt.
+
+## Snapshot gốc 11/11
+
 Ngày lập 11/11/2026; [Issue #9](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/9). Quy ước AC1, AC2… là **số thứ tự các gạch đầu dòng Acceptance Criteria của Issue tại snapshot**, không phải mã chính thức trên GitHub. Xem [snapshot và evidence](p01-verification.md), [dữ liệu](test-data-spec.md), [DoD](../management/definition-of-done.md).
 
 ## Quy ước kết quả
