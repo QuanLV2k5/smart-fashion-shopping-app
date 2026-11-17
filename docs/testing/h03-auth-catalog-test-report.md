@@ -12,7 +12,7 @@
 Tài liệu này tổng hợp kết quả kiểm thử, bằng chứng nghiệm thu và biên bản review chéo thuộc phạm vi phân công của Hải trong Sprint 1:
 1. **Module Auth & Profile (H01 - Issue #4):** Đăng nhập, đăng ký, xác nhận email, khôi phục phiên, cập nhật thông tin hồ sơ (Họ tên, SĐT), lựa chọn avatar preset và phân quyền dữ liệu RLS.
 2. **Module Catalog Presentation (H02 - Issue #5):** Danh sách sản phẩm, lọc theo danh mục/giá/size/màu còn hàng, tìm kiếm không phân biệt dấu/hoa thường, chi tiết sản phẩm với gallery ảnh và chọn biến thể.
-3. **Review chéo & Tích hợp (H03 - Issue #6):** Review PR nền tảng #10 và PR tích hợp #13 của Quân; xác minh không có lỗi hồi quy (regression) và bảo đảm toàn bộ test CI đạt.
+3. **Review chéo & Tích hợp (H03 - Issue #6):** Hải review PR nền tảng #10; bằng chứng peer review PR tích hợp #13 thuộc Phúc. Chạy bộ regression/CI và ghi rõ giới hạn kiểm chứng theo từng loại test.
 
 ---
 
@@ -22,7 +22,7 @@ Tài liệu này tổng hợp kết quả kiểm thử, bằng chứng nghiệm 
 - **Tác giả PR:** Quân (`QuanLV2k5`)
 - **Reviewer:** Trần Lê Nguyên Hải (`TranLenguyenHai`)
 - **Commit review:** `8699124`
-- **Kết luận:** **APPROVED** (10/11/2026)
+- **Kết luận:** **APPROVED** (11/11/2026; hiệu chỉnh ngày 17/11 theo API GitHub)
 - **Minh chứng:** [PR #10 Review #5856133135](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/10#pullrequestreview-5856133135)
 - **Nội dung kiểm tra:**
   - Chạy `flutter pub get` và smoke test trên Windows & Chrome.
@@ -31,9 +31,9 @@ Tài liệu này tổng hợp kết quả kiểm thử, bằng chứng nghiệm 
 
 ### 2.2. Review PR #13 (Tích hợp Sprint 1 Demo)
 - **Tác giả PR:** Quân (`QuanLV2k5`)
-- **Reviewer:** Trần Lê Nguyên Hải (`TranLenguyenHai`)
+- **Reviewer có bản ghi GitHub được xác minh:** Đinh Công Phúc (`DinhCongPhuc`).
 - **Mục tiêu:** Tích hợp nhánh Profile của Hải (`feat/h01-profile`) và Addresses của Phúc (`feat/p02-addresses`).
-- **Kết luận:** **APPROVED** (11/11/2026)
+- **Kết luận:** **APPROVED** (11/11/2026). Đối chiếu ngày 17/11: chưa có bản ghi Hải approve chính PR #13; không coi mô tả báo cáo là bằng chứng một review chưa tìm thấy.
 - **Nội dung kiểm tra:**
   - Xử lý xung đột router an toàn, hợp nhất các route `/account/profile` và `/addresses`.
   - Giữ vững RLS và phân quyền: `profiles` chỉ chứa thông tin cá nhân, `user_roles` quản lý quyền hạn riêng biệt.
@@ -53,14 +53,16 @@ flutter test --no-pub
 | Module | File kiểm thử | Số test | Kết quả | Trọng tâm kiểm tra |
 |---|---|:---:|:---:|---|
 | **Auth Flow** | `test/features/auth/auth_flow_test.dart` | 12 | **PASS** | Form validation, khóa nút khi đang gửi, sai mật khẩu, đăng ký cần email confirm, điều hướng route bảo vệ |
-| **Auth Repo** | `test/features/auth/supabase_auth_repository_test.dart` | 4 | **PASS** | Ánh xạ lỗi Supabase Auth, phân quyền phiên làm việc |
-| **Profile Unit** | `test/features/profile/profile_test.dart` | 3 | **PASS** | Validate Họ tên (1–100 ký tự), SĐT (9–15 số), copyWith model, ProfileFailure |
-| **Profile Flow** | `test/features/profile/profile_flow_test.dart` | 13 | **PASS** | Hiển thị form, cập nhật thành công (ProfileSaved), lỗi mạng (ProfileError), chọn avatar preset, responsive 360/390/430px |
-| **Profile Hồi quy** | `test/features/profile/profile_regressions_test.dart` | 9 | **PASS** | Tên toàn khoảng trắng, avatar preset không bị mất, đặt lại avatar null, đổi tài khoản xóa bản nháp |
-| **Catalog Flow** | `test/features/catalog/catalog_flow_test.dart` | 8 | **PASS** | Duyệt Home/Explore dùng chung cache, tìm kiếm không dấu, áp dụng/hủy bộ lọc, responsive chữ lớn |
+| **Auth Repo** | `test/features/auth/supabase_auth_repository_test.dart` | 2 | **PASS** | Ánh xạ lỗi Supabase Auth, phân quyền phiên làm việc |
+| **Profile Unit** | `test/features/profile/profile_test.dart` | 4 | **PASS** | Validate Họ tên (1–100 ký tự), SĐT (9–15 số), copyWith model, ProfileFailure |
+| **Profile Flow** | `test/features/profile/profile_flow_test.dart` | 9 | **PASS** | Hiển thị form, cập nhật thành công (ProfileSaved), lỗi mạng (ProfileError), chọn avatar preset, responsive 360/390/430px |
+| **Profile Hồi quy** | `test/features/profile/profile_regressions_test.dart` | 7 | **PASS** | Tên toàn khoảng trắng, avatar preset không bị mất, đặt lại avatar null, đổi tài khoản xóa bản nháp |
+| **Catalog Flow** | `test/features/catalog/catalog_flow_test.dart` | 7 | **PASS** | Duyệt Home/Explore dùng chung cache, tìm kiếm không dấu, áp dụng/hủy bộ lọc, responsive chữ lớn |
 | **Catalog Query** | `test/features/catalog/catalog_query_test.dart` | 5 | **PASS** | Lọc theo tầm giá VNĐ, size/màu cùng SKU, sắp xếp giá tăng/giảm |
 | **Catalog Repo** | `test/features/catalog/supabase_catalog_repository_test.dart` | 4 | **PASS** | Đọc dữ liệu từ Supabase, parse giá integer VNĐ, xử lý sản phẩm hết hàng |
-| **Tích hợp chung** | Smoke test, config, addresses, cart | 73 | **PASS** | Tích hợp liên hoàn các màn hình không lỗi |
+| **Các nhóm còn lại** | Smoke test, config, money, addresses, cart | 81 | **PASS** | Gồm unit/widget/mock; không phải 81 integration test cloud |
+
+Hiệu chỉnh 17/11: số lượng lấy từ JSON reporter của lần chạy lại main `5dc2b77` (131 test đạt). Bảng cũ cộng thành 151 dù tổng ghi 131. Xem [kiểm kê ngày 17/11](sprint-1-closure-2026-11-17.md). Các test mô phỏng không chứng minh RLS bằng JWT/API hoặc UAT.
 
 ---
 
@@ -79,9 +81,9 @@ flutter test --no-pub
 
 1. **Gói H02 (Issue #5):**
    - Đã đáp ứng toàn bộ Tiêu chí chấp nhận (AC): UI danh mục, tìm kiếm không dấu, lọc theo giá/size/màu, chi tiết sản phẩm + gallery và chọn biến thể hoạt động hoàn hảo.
-   - Sẵn sàng nghiệm thu và đóng Issue #5.
+   - Phần kỹ thuật đã có bằng chứng; còn ghi Actual hours và review bản hiệu chỉnh trước khi đóng Issue #5 theo DoD.
 
 2. **Gói H03 (Issue #6):**
    - Đã hoàn thành 100% việc tổng hợp kiểm thử cho Auth, Profile, Catalog (đạt 131/131 tests).
    - Đã ghi nhận đầy đủ biên bản review chéo PR #10 và PR #13 của Quân.
-   - Sẵn sàng nghiệm thu và đóng Issue #6.
+   - Bản hiệu chỉnh phải qua peer review; Actual hours chưa tổng hợp, chưa tự đóng Issue #6.
