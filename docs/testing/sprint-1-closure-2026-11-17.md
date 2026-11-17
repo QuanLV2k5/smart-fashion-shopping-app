@@ -10,6 +10,7 @@
 - Đếm từ JSON reporter: Auth 12+2=14; Profile 4+9+7=20; Catalog 7+5+4=16; Addresses 14+3+28+1+5=51; Cart 3+4+7+2=16; Core/smoke 4+9+1=14; tổng 131.
 - Catalog REST guest chạy thật ngày 17/11: SF01 199.000đ + SF02 249.000đ = **448.000đ**, 5 variants. Script dùng **PowerShell 7 (`pwsh`)**; Windows PowerShell 5 có lỗi đọc UTF-8 không BOM, chưa gọi được API khi chạy bằng `powershell.exe`.
 - Bộ `supabase/tests/foundation.sql` chạy lại trên cloud dev `xvpdkbzdyevjbvvfeksc` bằng SQL Editor: **PASS trigger/seed/GRANT/RLS anon/A/B/admin/ràng buộc dữ liệu**, toàn bộ BEGIN/ROLLBACK. [Query](https://supabase.com/dashboard/project/xvpdkbzdyevjbvvfeksc/sql/775f93d3-7a4e-4068-90bc-a8fab47a219f). SQL giả lập role/JWT claim trong transaction không thay kiểm thử REST bằng hai phiên Auth thật.
+- Query độc lập sau rollback xác nhận **5 categories / 12 products / 15 variants / 0 test_users / 0 hidden_products / 7 bảng public bật RLS**. [Query xác minh](https://supabase.com/dashboard/project/xvpdkbzdyevjbvvfeksc/sql/69bf1e6b-615b-49f8-a93b-671c16040729). Không giữ fixture hoặc thay giá/ẩn sản phẩm sau test.
 - Quân xác nhận 17/11: nhóm họp Retro **13/11**, cả ba chạy thành công trên máy riêng. Các lượt trước Quân đã xác nhận Auth Android, tìm kiếm, variant/giỏ 448.000đ lưu qua lần mở lại và bản tích hợp Profile/Addresses chạy ổn. Không suy thành toàn bộ ca mạng/RLS/API đã chạy.
 
 ## Trạng thái theo từng Issue
@@ -27,6 +28,8 @@
 | [#9 P01](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/9) | 7 file docs/42 ca trong PR14, có CI | Dự thảo cần peer review/đồng thuận; cập nhật ca cũ; Poker/actual chưa cung cấp; merge sau approve |
 
 **Kết luận:** phần lớn sản phẩm S1 đã tích hợp, nhưng không có cơ sở ghi Sprint 1 đạt 9/9 DoD. Giữ Issue thiếu điều kiện mở/In Review hoặc In Progress, theo dõi hạn xử lý 18/11; không đổi ngày baseline S1 để che trễ. Việc chốt hồ sơ diễn ra song song S2, không chặn người khác bắt đầu module độc lập.
+
+Đã cập nhật trực tiếp cả 9 Issue với phần đối chiếu 17/11; #1/#8 In Progress, #2/#3/#4/#5/#6/#7/#9 In Review. Không đánh dấu Actual hours có số khi chưa được cung cấp. [PR #16](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/16) bàn giao hồ sơ, giữ nguyên commit P01 của Phúc; phải peer review và CI tại HEAD mới nhất đạt trước merge. PR #14 còn Draft tại lần kiểm kê, không tự đánh dấu ready/approve thay tác giả.
 
 ## Các bước chốt còn lại
 

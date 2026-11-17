@@ -48,6 +48,19 @@ Ngoài phạm vi giữ nguyên: AR/thử đồ ảo, tìm bằng ảnh/quét nh�
 
 ## 4. Các mốc hằng ngày
 
+Backlog thực thi đã tạo trên GitHub ngày 17/11 (có assignee, milestone và Project):
+
+| Issue | Người phụ trách | Hạn / sprint |
+|---|---|---|
+| [#17 AI](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/17) | Quân | Backend/UI 20/11; tích hợp 21/11, S2 |
+| [#18 Yêu thích/đánh giá/người dùng](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/18) | Quân | 21/11, S2 |
+| [#19 Admin catalog/Storage/cache](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/19) | Hải | 21/11, S2 |
+| [#20 COD và đơn](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/20) | Phúc | RPC 19/11, flow 21/11, S2 |
+| [#21 Thống kê/tích hợp/regression](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/21) | Phúc tổng hợp, cả ba theo module | 23/11, S3 |
+| [#22 UAT/release](https://github.com/QuanLV2k5/smart-fashion-shopping-app/issues/22) | Hải build, Phúc QA, Quân kiểm tra scope | 25/11, S4 |
+
+Các Issue này gom task R3 để điều phối, không thay thế hoặc nhân đôi 14 deliverable work package trong WBS báo cáo. Mỗi owner tách PR nhỏ theo phần backend/UI khi cần, cùng tham chiếu Issue. Trạng thái ban đầu Backlog phản ánh chưa triển khai.
+
 | Ngày | Quân | Hải | Phúc | Cổng chung cuối ngày |
 |---|---|---|---|---|
 | 17/11 | Kiểm kê S1, kế hoạch R4/contract | Review tài liệu P01 và phần UI liên quan | Xác nhận hồ sơ P01/Retro/giờ | Không tính Issue chưa đủ DoD là Done |

@@ -12,7 +12,7 @@
 Tài liệu này tổng hợp kết quả kiểm thử, bằng chứng nghiệm thu và biên bản review chéo thuộc phạm vi phân công của Hải trong Sprint 1:
 1. **Module Auth & Profile (H01 - Issue #4):** Đăng nhập, đăng ký, xác nhận email, khôi phục phiên, cập nhật thông tin hồ sơ (Họ tên, SĐT), lựa chọn avatar preset và phân quyền dữ liệu RLS.
 2. **Module Catalog Presentation (H02 - Issue #5):** Danh sách sản phẩm, lọc theo danh mục/giá/size/màu còn hàng, tìm kiếm không phân biệt dấu/hoa thường, chi tiết sản phẩm với gallery ảnh và chọn biến thể.
-3. **Review chéo & Tích hợp (H03 - Issue #6):** Review PR nền tảng #10 và PR tích hợp #13 của Quân; xác minh không có lỗi hồi quy (regression) và bảo đảm toàn bộ test CI đạt.
+3. **Review chéo & Tích hợp (H03 - Issue #6):** Hải review PR nền tảng #10; bằng chứng peer review PR tích hợp #13 thuộc Phúc. Chạy bộ regression/CI và ghi rõ giới hạn kiểm chứng theo từng loại test.
 
 ---
 
