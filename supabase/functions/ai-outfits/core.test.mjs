@@ -28,7 +28,7 @@ test('mock Gemini exchange uses catalog, excludes requested ID and validates res
  let called=false;
  const res=await recommend(input,catalog,{apiKey:'test-only',model:'test',fetcher:async(url,request)=>{
  called=true; assert.ok(url.endsWith('/test:generateContent')); assert.equal(request.headers['x-goog-api-key'],'test-only');
- const payload=JSON.parse(request.body); assert.equal(payload.generationConfig.responseMimeType,'application/json');
+ const payload=JSON.parse(request.body); assert.equal(payload.generationConfig.responseMimeType,'application/json'); assert.deepEqual(payload.generationConfig.responseSchema.properties.productIds.items.enum,['shirt','jeans']);
  return Response.json({candidates:[{content:{parts:[{text:JSON.stringify({productIds:['shirt','jeans'],explanation:'Bộ đồ phù hợp'})}]}}]});
  }});
  assert.ok(called);assert.equal(res.totalVnd,448000);
