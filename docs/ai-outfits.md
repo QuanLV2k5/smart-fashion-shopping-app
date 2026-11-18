@@ -42,6 +42,7 @@ Test mock chỉ kiểm tra logic, không chứng minh gọi Gemini thật. SQL k
 
 ## Giới hạn cần biết khi review
 
+- Server tính các tổ hợp 2–4 món trong ngân sách, giữ ID cần giữ, rồi Gemini chọn outfitId và giải thích. Tối đa 64 ứng viên (32 bộ 2 món, 24 bộ 3 món, 8 bộ 4 món), tìm kiếm có giới hạn; đây không phải tối ưu toàn bộ tổ hợp cho catalog lớn.
 - Catalog đưa vào Gemini giới hạn 100 sản phẩm đang bán; phù hợp catalog đồ án hiện tại.
 - “Đổi món” loại món đã chọn và gửi keepIds của các món còn lại. Server bắt buộc giữ đủ các ID đó và kiểm tra lại tổng giá/tồn kho; không có phương án hợp lệ thì trả no-match.
 - Thêm bộ dùng RPC giỏ hiện có theo từng món, không phải transaction cho cả bộ. Thành công một phần được giữ và thông báo; trong sheet ghi nhớ các món đã xác nhận để không thêm lại khi thử lại. RPC giỏ chống lặp request khi mất phản hồi.

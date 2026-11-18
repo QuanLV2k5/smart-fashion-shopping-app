@@ -35,7 +35,7 @@ test('server rechecks prices after generation and rejects changed catalog',async
  if(url.endsWith('/user')) return json({id:'a'});
  if(url.includes('/rpc/')) return json(true);
  if(url.includes('/products?')) return json([p('a',++reads===1?100000:490000),p('b',200000)]);
- if(url.includes('generativelanguage')) return json({candidates:[{content:{parts:[{text:JSON.stringify({productIds:['a','b'],explanation:'Phù hợp'})}]}}]});
+ if(url.includes('generativelanguage')) return json({candidates:[{content:{parts:[{text:JSON.stringify({outfitId:'O1',explanation:'Phù hợp'})}]}}]});
  throw new Error('unexpected URL');
  },async()=>{const res=await handler(request(input));assert.equal(res.status,502);assert.equal((await res.json()).code,'INVALID_AI_RESPONSE');});
  assert.equal(reads,2);
@@ -45,7 +45,7 @@ test('valid authenticated outfit returns catalog prices and Gemini provenance',a
  if(url.endsWith('/user')) return json({id:'a'});
  if(url.includes('/rpc/')) return json(true);
  if(url.includes('/products?')) return json([p('a',100000),p('b',200000)]);
- return json({candidates:[{content:{parts:[{text:JSON.stringify({productIds:['a','b'],explanation:'Phù hợp'})}]}}]});
+ return json({candidates:[{content:{parts:[{text:JSON.stringify({outfitId:'O1',explanation:'Phù hợp'})}]}}]});
  },async()=>{const res=await handler(request(input));assert.equal(res.status,200);const body=await res.json();assert.equal(body.provider,'gemini');assert.equal(body.totalVnd,300000);});
 });
 test('upstream timeout becomes a retryable 504 without exposing payload',async()=>{
