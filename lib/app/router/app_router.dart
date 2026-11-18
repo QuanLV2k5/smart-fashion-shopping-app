@@ -13,6 +13,7 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import 'auth_redirect.dart';
+import '../../features/ai/presentation/ai_page.dart';
 import '../../features/addresses/presentation/addresses_page.dart';
 import '../../features/addresses/presentation/address_form_page.dart';
 
@@ -29,6 +30,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ref.read(authRepositoryProvider).currentUser;
       final path = state.matchedLocation;
       final protected =
+          path == '/ai' ||
           path == '/account' ||
           path.startsWith('/account/') ||
           path == '/logout' ||
@@ -40,10 +42,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/confirm-email',
       }.contains(path);
       if (user == null && protected) {
-        final destination =
-            path == '/addresses/select' ||
-                (path.startsWith('/addresses/') &&
-                    state.uri.queryParameters['from'] == 'cart')
+        final destination = path == '/ai'
+            ? '/ai'
+            : path == '/addresses/select' ||
+                  (path.startsWith('/addresses/') &&
+                      state.uri.queryParameters['from'] == 'cart')
             ? '/addresses/select'
             : path.startsWith('/addresses')
             ? '/addresses'
@@ -58,6 +61,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
       GoRoute(
         path: '/login',
         builder: (context, state) => LoginPage(
