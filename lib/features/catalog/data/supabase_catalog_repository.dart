@@ -3,15 +3,22 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/catalog.dart';
+import 'catalog_cache_storage.dart';
 
 class SupabaseCatalogRepository implements CatalogRepository {
-  const SupabaseCatalogRepository(this.client);
+  const SupabaseCatalogRepository(
+    this.client, [
+    this.cacheStorage = const CatalogCacheStorage(),
+  ]);
   final SupabaseClient? client;
+  final CatalogCacheStorage cacheStorage;
 
   @override
   Future<CatalogSnapshot> loadCatalog() async {
     final backend = client;
     if (backend == null) {
+      final cached = await cacheStorage.loadCache();
+      if (cached != null) return cached;
       throw const CatalogFailure(
         'Cửa hàng chưa kết nối được. Vui lòng thử lại sau.',
       );
@@ -44,22 +51,33 @@ class SupabaseCatalogRepository implements CatalogRepository {
           )
           .where((p) => categoryIds.contains(p.categoryId))
           .toList();
-      return CatalogSnapshot(categories: categories, products: products);
+      final fresh = CatalogSnapshot(
+        categories: categories,
+        products: products,
+        cachedAt: DateTime.now(),
+      );
+      await cacheStorage.saveCache(fresh);
+      return fresh;
     } on CatalogFailure {
       rethrow;
     } on FormatException {
       throw const CatalogFailure(
         'Thông tin sản phẩm chưa hợp lệ. Vui lòng thử lại sau.',
       );
-    } on TimeoutException {
-      throw const CatalogFailure(
-        'Kết nối mất nhiều thời gian. Kiểm tra mạng rồi thử lại nhé.',
-      );
-    } on PostgrestException {
-      throw const CatalogFailure(
-        'Chưa tải được catalog. Vui lòng thử lại sau.',
-      );
-    } catch (_) {
+    } catch (e) {
+      final cached = await cacheStorage.loadCache();
+      if (cached != null) return cached;
+
+      if (e is TimeoutException) {
+        throw const CatalogFailure(
+          'Kết nối mất nhiều thời gian. Kiểm tra mạng rồi thử lại nhé.',
+        );
+      }
+      if (e is PostgrestException) {
+        throw const CatalogFailure(
+          'Chưa tải được catalog. Vui lòng thử lại sau.',
+        );
+      }
       throw const CatalogFailure(
         'Không thể kết nối cửa hàng. Kiểm tra mạng rồi thử lại nhé.',
       );
@@ -90,6 +108,11 @@ class SupabaseCatalogRepository implements CatalogRepository {
   Future<CatalogProduct?> loadProduct(String id) async {
     final backend = client;
     if (backend == null) {
+      final cached = await cacheStorage.loadCache();
+      if (cached != null) {
+        final found = cached.products.where((p) => p.id == id);
+        if (found.isNotEmpty) return found.first;
+      }
       throw const CatalogFailure(
         'Cửa hàng chưa kết nối được. Vui lòng thử lại sau.',
       );
@@ -112,6 +135,11 @@ class SupabaseCatalogRepository implements CatalogRepository {
               imageUrl: (path) => catalogImageUrl(backend, path),
             );
     } catch (_) {
+      final cached = await cacheStorage.loadCache();
+      if (cached != null) {
+        final found = cached.products.where((p) => p.id == id);
+        if (found.isNotEmpty) return found.first;
+      }
       throw const CatalogFailure(
         'Chưa tải được sản phẩm. Kiểm tra kết nối rồi thử lại.',
       );

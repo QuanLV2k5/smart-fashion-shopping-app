@@ -1,0 +1,59 @@
+import 'admin_models.dart';
+
+abstract interface class AdminRepository {
+  /// Lấy danh sách toàn bộ danh mục (bao gồm cả danh mục tạm ẩn).
+  Future<List<AdminCategory>> fetchCategories();
+
+  /// Thêm mới hoặc cập nhật danh mục.
+  Future<void> saveCategory({
+    String? id,
+    required String name,
+    required String slug,
+    required bool isActive,
+  });
+
+  /// Lấy danh sách toàn bộ sản phẩm (kèm biến thể và trạng thái ẩn/hiện).
+  Future<List<AdminProduct>> fetchProducts({
+    String? categoryId,
+    String? searchQuery,
+  });
+
+  /// Lấy chi tiết một sản phẩm theo ID để chỉnh sửa.
+  Future<AdminProduct?> fetchProductById(String id);
+
+  /// Thêm mới hoặc cập nhật sản phẩm. Trả về ID của sản phẩm.
+  Future<String> saveProduct({
+    String? id,
+    required String code,
+    required String categoryId,
+    required String name,
+    required String description,
+    required String material,
+    required int priceVnd,
+    required List<String> imagePaths,
+    required bool isVisible,
+  });
+
+  /// Bật/tắt trạng thái hiển thị của sản phẩm (is_visible).
+  Future<void> toggleProductVisibility(String id, bool isVisible);
+
+  /// Thêm hoặc cập nhật biến thể (size, color, stock, sku).
+  Future<void> saveVariant({
+    String? id,
+    required String productId,
+    required String sku,
+    required String size,
+    required String color,
+    required int stock,
+  });
+
+  /// Xóa biến thể sản phẩm.
+  Future<void> deleteVariant(String variantId);
+
+  /// Tải ảnh sản phẩm lên bucket Storage 'product-images'. Trả về storage path.
+  Future<String> uploadProductImage({
+    required List<int> bytes,
+    required String fileName,
+    required String mimeType,
+  });
+}

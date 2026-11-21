@@ -15,6 +15,12 @@ import '../../features/profile/presentation/profile_page.dart';
 import 'auth_redirect.dart';
 import '../../features/addresses/presentation/addresses_page.dart';
 import '../../features/addresses/presentation/address_form_page.dart';
+import '../../features/admin/domain/admin_models.dart';
+import '../../features/admin/presentation/admin_dashboard_page.dart';
+import '../../features/admin/presentation/categories/admin_categories_page.dart';
+import '../../features/admin/presentation/categories/admin_category_form_page.dart';
+import '../../features/admin/presentation/products/admin_products_page.dart';
+import '../../features/admin/presentation/products/admin_product_form_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
@@ -33,7 +39,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path.startsWith('/account/') ||
           path == '/logout' ||
           path == '/addresses' ||
-          path.startsWith('/addresses/');
+          path.startsWith('/addresses/') ||
+          path == '/admin' ||
+          path.startsWith('/admin/');
       final authForm = const {
         '/login',
         '/register',
@@ -131,6 +139,44 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => AddressFormPage(
           addressId: state.pathParameters['id'],
           returnToSelection: state.uri.queryParameters['from'] == 'cart',
+        ),
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminDashboardPage(),
+      ),
+      GoRoute(
+        path: '/admin/categories',
+        builder: (context, state) => const AdminCategoriesPage(),
+      ),
+      GoRoute(
+        path: '/admin/categories/new',
+        builder: (context, state) => const AdminCategoryFormPage(),
+      ),
+      GoRoute(
+        path: '/admin/categories/:id/edit',
+        builder: (context, state) => AdminCategoryFormPage(
+          categoryId: state.pathParameters['id'],
+          initialCategory: state.extra is AdminCategory
+              ? state.extra! as AdminCategory
+              : null,
+        ),
+      ),
+      GoRoute(
+        path: '/admin/products',
+        builder: (context, state) => const AdminProductsPage(),
+      ),
+      GoRoute(
+        path: '/admin/products/new',
+        builder: (context, state) => const AdminProductFormPage(),
+      ),
+      GoRoute(
+        path: '/admin/products/:id/edit',
+        builder: (context, state) => AdminProductFormPage(
+          productId: state.pathParameters['id'],
+          initialProduct: state.extra is AdminProduct
+              ? state.extra! as AdminProduct
+              : null,
         ),
       ),
     ],

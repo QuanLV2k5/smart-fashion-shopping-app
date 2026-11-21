@@ -11,6 +11,11 @@ String authDestination(String? requested) {
         '/cart',
         '/addresses',
         '/addresses/select',
+        '/admin',
+        '/admin/categories',
+        '/admin/categories/new',
+        '/admin/products',
+        '/admin/products/new',
       }.contains(uri.path) &&
       !uri.hasQuery) {
     return uri.path;
