@@ -2,13 +2,35 @@
 
 ## Phạm vi
 
-Trang chủ → Phối đồ AI → phong cách/dịp/ngân sách/mô tả → Gemini → sản phẩm thật → chi tiết hoặc chọn biến thể và thêm bộ vào giỏ.
-Không lưu lịch sử chat/outfit. Ngân sách chỉ tính tiền sản phẩm.
+Trang chủ → Phối đồ AI → tư vấn theo nhu cầu, hoặc **Phối từ ảnh món đồ đã có** → Gemini nhận diện ảnh → người dùng kiểm tra/sửa thuộc tính → nhập nhu cầu → phối với sản phẩm Supabase → chọn biến thể và thêm giỏ.
+Ngân sách chỉ tính sản phẩm mua thêm, chưa gồm vận chuyển. Món người dùng đã có không có ID sản phẩm shop, không tính tiền và không thêm vào giỏ. Chưa lưu lịch sử chat/outfit hoặc tủ đồ cá nhân.
+
+## Phối từ ảnh món đồ đã có
+
+- Route `/ai/photo` yêu cầu đăng nhập và được hỗ trợ trong `next` sau Auth.
+- `image_picker` 1.2.4 cung cấp chụp/chọn ảnh Android và chọn/chụp qua trình duyệt web. Android dùng picker của hệ thống, không thêm quyền đọc toàn bộ Storage hoặc quyền camera không cần thiết. Có khôi phục ảnh bị mất do Android tạo lại activity khi mở lại màn ảnh.
+- Ảnh được giới hạn kích thước khi chọn, kiểm tra byte/MIME JPG, PNG, WebP và tối đa 2 MB ở cả client/server. Web có thể không chuyển được HEIC; app báo chọn JPG thay vì giả vờ phân tích.
+- Ảnh được gửi inline đến Edge Function rồi Gemini, không upload Supabase Storage. App giữ bytes/thuộc tính trong màn hình; đổi phiên đăng nhập sẽ xóa nội dung khỏi màn và bỏ kết quả đến muộn. Cache tạm của OS/plugin không phải tủ đồ của ứng dụng.
+- Gemini trả loại món, tên, màu, họa tiết, kiểu dáng và đặc điểm nhìn thấy. Không đọc thuộc tính từ tên file, không suy đoán chất liệu thật/số đo/danh tính. Ảnh không có đồ, nhiều món hoặc quá mờ có trạng thái riêng.
+- Người dùng xác nhận/sửa thuộc tính trước tư vấn. Lượt tư vấn dùng thuộc tính đó cùng tên, mô tả, chất liệu đã có và màu còn hàng trong catalog. Bản này chưa xem ảnh từng sản phẩm shop hoặc dùng vector search.
+- Server phân biệt quần/chân váy với váy liền, giày với túi/phụ kiện; món đã có lấp một vai trò trong outfit. Có thể trả một sản phẩm mua thêm nếu đã đủ cấu trúc bộ đồ. Không ghép thêm áo thứ hai khi người dùng đã có áo; không dùng túi/mũ đơn lẻ để thay phần quần áo còn thiếu.
+- Chọn biến thể dùng lại `OutfitCartSheet` và RPC giỏ hiện tại. Giá và stock được đọc lại trước thêm, chỉ gửi các sản phẩm mua thêm.
+
+### API tương thích ngược
+
+Endpoint vẫn là `ai-outfits`, `apiVersion: 2`.
+
+1. `{action:"analyze", image:{mimeType,data}}`: `data` là base64 ảnh. Trả `{provider:"gemini",apiVersion:2,status,garment}`. Status khác `ok` trả garment null.
+2. Request tư vấn cũ vẫn chạy. Có thể thêm `ownedGarment:{category,name,color,pattern,fit,details}` do người dùng xác nhận. Category: `top`, `bottom`, `dress`, `outerwear`, `shoes`, `bag`, `accessory`.
+3. `products` trong kết quả tư vấn chỉ là hàng mua thêm; server tính `totalVnd`. Client yêu cầu API v2 cho luồng ảnh để tránh chấp nhận kết quả từ backend cũ.
+
+Phân tích và tư vấn là hai lượt, mỗi lượt tiêu thụ một quota hiện tại 6 yêu cầu/tài khoản/phút. Hủy bỏ kết quả trên client không hoàn lại quota hoặc bảo đảm hủy được Gemini.
 
 ## Cấu trúc
 
 - `lib/features/ai/domain`: yêu cầu, kết quả và hợp đồng repository.
 - `lib/features/ai/data`: gọi `ai-outfits`, kiểm tra phiên và đối chiếu catalog mới.
+- `owned_garment.dart`, `device_garment_photo_picker.dart`, `supabase_garment_repository.dart`, `photo_outfit_page.dart`: dữ liệu ảnh/thuộc tính, picker, gọi vision và UI ba bước.
 - `lib/features/ai/presentation`: form, loading, kết quả, no-match, lỗi/thử lại và sheet chọn biến thể.
 - `supabase/functions/ai-outfits`: handler xác thực Supabase Auth; core gọi Gemini REST và kiểm tra output.
 - `supabase/migrations/20261118000100_ai_rate_limit.sql`: quota 6 yêu cầu/tài khoản/phút, cập nhật nguyên tử tại PostgreSQL.
@@ -22,7 +44,7 @@ Key Gemini chỉ lưu trong Supabase Secrets với tên `GEMINI_API_KEY`. Không
 Project dev: `xvpdkbzdyevjbvvfeksc`.
 1. Áp dụng **chỉ migration mới** bên trên bằng SQL Editor; không chạy lại migration cũ.
 2. Tự lưu `GEMINI_API_KEY` trong Edge Function Secrets.
-3. Deploy hai file `index.ts` và `core.mjs` dưới tên `ai-outfits`. CLI: `supabase functions deploy ai-outfits --project-ref xvpdkbzdyevjbvvfeksc` sau khi đăng nhập CLI, hoặc Dashboard Editor.
+3. Deploy đủ bốn file `index.ts`, `core.mjs`, `vision.mjs`, `garment.mjs` dưới tên `ai-outfits`. CLI v3: `npx supabase functions deploy ai-outfits --remote=xvpdkbzdyevjbvvfeksc --use-api --yes` sau khi đăng nhập CLI. Chỉ dùng lệnh này với project dev đã xác nhận.
 4. Gateway Verify JWT legacy OFF; kiểm tra handler bắt buộc xác thực như mô tả ở trên.
 5. Chạy `supabase/tests/ai_rate_limit.sql` trên dev. Toàn bộ fixture được ROLLBACK.
 6. Đăng nhập app, chọn preset casual 500.000đ, gửi và kiểm tra kết quả thật. Thiếu/không hợp lệ key hoặc quota trả lỗi, không dùng mock làm kết quả thật.
@@ -48,7 +70,7 @@ Test mock chỉ kiểm tra logic, không chứng minh gọi Gemini thật. SQL k
 - Thêm bộ dùng RPC giỏ hiện có theo từng món, không phải transaction cho cả bộ. Thành công một phần được giữ và thông báo; trong sheet ghi nhớ các món đã xác nhận để không thêm lại khi thử lại. RPC giỏ chống lặp request khi mất phản hồi.
 - Giá/tồn kho vẫn có thể đổi sau kiểm tra; server giỏ là nơi quyết định cuối cùng. Tổng tiền cần kiểm tra lại khi thanh toán.
 - Hủy tư vấn bỏ qua kết quả đến muộn; không bảo đảm hủy được yêu cầu Gemini đã gửi và không hoàn lại quota.
-- Chưa có lịch sử AI/lưu outfit hoặc xử lý ảnh người dùng.
+- Chưa có lịch sử AI/lưu outfit, tủ đồ lưu bền, hội thoại nhiều lượt, embedding/tìm bằng ảnh hoặc thử đồ ảo. Nhận diện ảnh món đã có là chức năng mới; không đồng nhất với các phần mở rộng đó.
 
 ## Trạng thái bằng chứng
 

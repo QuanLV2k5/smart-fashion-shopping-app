@@ -56,3 +56,29 @@ test('upstream timeout becomes a retryable 504 without exposing payload',async()
  throw new DOMException('private upstream details','TimeoutError');
  },async()=>{const res=await handler(request(input));assert.equal(res.status,504);assert.deepEqual(await res.json(),{code:'AI_TIMEOUT'});});
 });
+test('authenticated analysis uses quota but never reads or writes catalog/Storage',async()=>{
+ const image={mimeType:'image/png',data:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXxkAAAAASUVORK5CYII='};
+ const garment={category:'top',name:'Áo',color:'Trắng',pattern:'Trơn',fit:'Chưa rõ',details:'Cổ tròn'};
+ const calls=[];
+ await mock(async(url,options)=>{
+  calls.push(url);
+  if(url.endsWith('/user'))return json({id:'a'});
+  if(url.includes('/rpc/'))return json(true);
+  assert.ok(url.includes('generativelanguage'));
+  assert.equal(JSON.parse(options.body).contents[0].parts[1].inlineData.data,image.data);
+  return json({candidates:[{content:{parts:[{text:JSON.stringify({status:'ok',garment})}]}}]});
+ },async()=>{
+  const res=await handler(request({action:'analyze',image}));
+  assert.equal(res.status,200);
+  assert.deepEqual(await res.json(),{status:'ok',garment,provider:'gemini',apiVersion:2});
+ });
+ assert.equal(calls.length,3);
+});
+test('analysis rejects unauthenticated/oversized/malformed input before quota and Gemini',async()=>{
+ await mock(async url=>{assert.ok(url.endsWith('/user'));return json({id:'a'});},async()=>{
+  assert.equal((await handler(request({action:'analyze'},''))).status,401);
+  assert.equal((await handler(request({action:'analyze',image:{mimeType:'image/png',data:'bad'}}))).status,400);
+  assert.equal((await handler(request({action:'unknown'}))).status,400);
+  assert.equal((await handler(request({padding:'x'.repeat(2900001)}))).status,413);
+ });
+});

@@ -1,4 +1,5 @@
 import '../../catalog/domain/catalog.dart';
+import 'owned_garment.dart';
 
 class AiRequest {
   const AiRequest({
@@ -8,11 +9,13 @@ class AiRequest {
     this.notes = '',
     this.excludeIds = const [],
     this.keepIds = const [],
+    this.ownedGarment,
   });
   final String style, occasion, notes;
   final int budget;
   final List<String> excludeIds;
   final List<String> keepIds;
+  final OwnedGarment? ownedGarment;
   Map<String, dynamic> toJson() => {
     'style': style,
     'occasion': occasion,
@@ -20,6 +23,7 @@ class AiRequest {
     'notes': notes,
     'excludeIds': excludeIds,
     'keepIds': keepIds,
+    if (ownedGarment != null) 'ownedGarment': ownedGarment!.toJson(),
   };
 }
 

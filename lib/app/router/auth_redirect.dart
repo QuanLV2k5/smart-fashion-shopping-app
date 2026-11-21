@@ -7,6 +7,7 @@ String authDestination(String? requested) {
   if (const {
         '/',
         '/ai',
+        '/ai/photo',
         '/account',
         '/account/profile',
         '/cart',

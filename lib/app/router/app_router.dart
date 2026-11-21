@@ -14,6 +14,7 @@ import '../../features/auth/presentation/register_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import 'auth_redirect.dart';
 import '../../features/ai/presentation/ai_page.dart';
+import '../../features/ai/presentation/photo_outfit_page.dart';
 import '../../features/addresses/presentation/addresses_page.dart';
 import '../../features/addresses/presentation/address_form_page.dart';
 
@@ -31,6 +32,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
       final protected =
           path == '/ai' ||
+          path.startsWith('/ai/') ||
           path == '/account' ||
           path.startsWith('/account/') ||
           path == '/logout' ||
@@ -42,8 +44,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/confirm-email',
       }.contains(path);
       if (user == null && protected) {
-        final destination = path == '/ai'
-            ? '/ai'
+        final destination = path == '/ai' || path == '/ai/photo'
+            ? path
             : path == '/addresses/select' ||
                   (path.startsWith('/addresses/') &&
                       state.uri.queryParameters['from'] == 'cart')
@@ -62,6 +64,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
+      GoRoute(
+        path: '/ai/photo',
+        builder: (context, state) => const PhotoOutfitPage(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => LoginPage(

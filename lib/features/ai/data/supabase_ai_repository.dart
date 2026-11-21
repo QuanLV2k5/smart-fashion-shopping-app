@@ -28,6 +28,11 @@ class SupabaseAiRepository implements AiRepository {
         throw AiFailure(messageForCode((res.data as Map?)?['code']));
       }
       final data = Map<String, dynamic>.from(res.data as Map);
+      if (request.ownedGarment != null && data['apiVersion'] != 2) {
+        throw const AiFailure(
+          'Phối đồ từ ảnh chưa sẵn sàng. Hãy cập nhật dịch vụ rồi thử lại.',
+        );
+      }
       if (data['provider'] != 'gemini' ||
           data['products'] is! List ||
           data['explanation'] is! String) {
@@ -36,7 +41,7 @@ class SupabaseAiRepository implements AiRepository {
       final ids = (data['products'] as List)
           .map((p) => (p as Map)['id'] as String)
           .toList();
-      if (ids.length == 1 ||
+      if ((ids.length == 1 && request.ownedGarment == null) ||
           ids.length > 4 ||
           ids.toSet().length != ids.length ||
           ids.any(request.excludeIds.contains) ||
@@ -80,6 +85,10 @@ class SupabaseAiRepository implements AiRepository {
   }
 
   static String messageForCode(Object? code) => switch (code) {
+    'INVALID_IMAGE' =>
+      'Ảnh chưa hợp lệ. Chọn ảnh JPG, PNG hoặc WebP rõ một món đồ.',
+    'IMAGE_TOO_LARGE' =>
+      'Ảnh lớn hơn 2 MB. Hãy chọn ảnh nhỏ hơn hoặc chụp lại.',
     'UNAUTHORIZED' => 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.',
     'AI_NOT_CONFIGURED' =>
       'Dịch vụ tư vấn chưa sẵn sàng. Vui lòng thử lại sau.',

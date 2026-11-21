@@ -330,6 +330,11 @@ class _AiPageState extends ConsumerState<AiPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: 16,
                   children: [
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/ai/photo'),
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      label: const Text('Phối từ ảnh món đồ đã có'),
+                    ),
                     Text(
                       'Hôm nay bạn\nmuốn mặc gì?',
                       style: Theme.of(context).textTheme.displaySmall
