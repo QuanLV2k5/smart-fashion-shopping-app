@@ -10,14 +10,17 @@ class AiRequest {
     this.excludeIds = const [],
     this.keepIds = const [],
     this.ownedGarment,
+    this.audience = 'Unisex',
   });
   final String style, occasion, notes;
+  final String audience;
   final int budget;
   final List<String> excludeIds;
   final List<String> keepIds;
   final OwnedGarment? ownedGarment;
   Map<String, dynamic> toJson() => {
     'style': style,
+    'audience': audience,
     'occasion': occasion,
     'budget': budget,
     'notes': notes,

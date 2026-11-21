@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-21T20:52:14.5163079+07:00",
+  "project": "xvpdkbzdyevjbvvfeksc",
+  "fixtureSource": "catalog atlas crop, blue Oxford shirt",
+  "checks": [
+    "unauthenticated request rejected: 401",
+    "real Gemini received JPEG bytes and identified an owned top",
+    "live Gemini chat: same-role strictly cheaper pants, shoes retained, keep across turns, locked replacement refused"
+  ],
+  "analysis": {
+    "garment": {
+      "category": "top",
+      "name": "Áo sơ mi dài tay",
+      "color": "Xanh dương",
+      "pattern": "Trơn",
+      "fit": "Vừa vặn",
+      "details": "Cổ áo sơ mi có cúc cài ở mũi nhọn, hàng cúc dọc phía trước, một túi ngực bên trái, tay dài có cổ tay cài cúc"
+    },
+    "elapsedMs": 2699,
+    "status": "ok"
+  },
+  "chat": {
+    "products": [
+      {
+        "code": "SF02",
+        "name": "Jeans Straight",
+        "price_vnd": 249000
+      },
+      {
+        "code": "SF08",
+        "name": "Sneaker Everyday",
+        "price_vnd": 359000
+      }
+    ],
+    "elapsedMs": 4263,
+    "message": "Chọn bộ đồ này với quần Jeans Straight màu xanh denim và giày Sneaker Everyday màu trắng, tổng giá trị 608000đ nằm trong ngân sách 700000đ. Phối cùng áo sơ mi dài tay màu xanh dương bạn đã có tạo nên tổng thể lịch sự, trẻ trung, rất phù hợp cho dịp bảo vệ đồ án và đáp ứng đúng yêu cầu giữ giày sneaker.",
+    "totalVnd": 608000
+  },
+  "keepReply": "Mình đã giữ lại chiếc quần Jeans Straight cho bạn. Bộ đồ bảo vệ đồ án của bạn đã sẵn sàng!",
+  "lockedReply": "Món này đang được giữ. Bỏ chọn Giữ món trong danh sách rồi thử lại nhé.",
+  "fixtureRemoved": true
+}

@@ -5,6 +5,15 @@ Hải là reviewer. Chưa tự đóng Issue hoặc merge main.
 
 ## Cập nhật phối đồ từ ảnh ngày 21/11/2026
 
+### Bổ sung hội thoại 0.1.7
+
+- Quân xác nhận đã cài 0.1.6 và thử nhận diện/phối với các ảnh mẫu thành công trên Android.
+- 0.1.7 thêm AI Stylist trong navigation, Nam/Nữ/Unisex, bảy phong cách/bảy dịp và panel hội thoại ở cả hai luồng.
+- Cloud smoke lúc 20:52 GMT+7: Gemini hiểu yêu cầu giữ sneaker và tìm quần rẻ hơn; thay quần 329.000đ bằng jeans 249.000đ, tổng 688.000đ → **608.000đ**. Tiếp tục giữ jeans, rồi yêu cầu đổi sneaker đang khóa được từ chối có hướng dẫn bỏ giữ. Tài khoản fixture đã dọn. Evidence: `evidence/chat-ai-live-2026-11-21.json`.
+- **156 Flutter tests**, **31 Node tests** đạt; analyzer sạch. Widget test xác minh gửi IDs/locks và đối chiếu giá từ catalog thay vì tin giá model; backend test kiểm tra thay đúng vai trò, giá thấp hơn, giữ món, câu mơ hồ và output ID giả.
+- Kịch bản Android mới: cài 0.1.7 → AI Stylist → chọn Nam/Nữ/Unisex/phong cách → tư vấn → Trò chuyện & chỉnh bộ đồ → khóa món → gửi yêu cầu đổi/rẻ hơn → Áp dụng bộ đồ này → chọn biến thể/thêm giỏ. Thử trường hợp không có món rẻ hơn và bỏ khóa rồi đổi.
+- Hội thoại chưa lưu lịch sử lên cloud. Đóng panel bỏ chỉnh sửa chưa áp dụng; mỗi lượt chat tiêu thụ một request trong quota 6/phút và có thể gọi Gemini hai lần.
+
 Build mới: **0.1.6+7**. Function `ai-outfits` v12 đã deploy bằng Supabase CLI lên `smart-fashion-dev`; dùng secret Gemini đã lưu, không đọc giá trị secret. Mã nguồn gồm index/core/vision/garment và vẫn xác thực `/auth/v1/user` trước khi gọi AI.
 
 ### Smoke test cloud thật

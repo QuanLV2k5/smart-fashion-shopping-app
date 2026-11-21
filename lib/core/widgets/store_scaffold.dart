@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../theme/app_tokens.dart';
 
-/// Ba điểm đến đã hoạt động; dùng chung cho cửa hàng và tài khoản.
+/// Các điểm đến dùng chung cho cửa hàng, tài khoản và AI Stylist.
 class StoreScaffold extends StatelessWidget {
   const StoreScaffold({
     required this.title,
@@ -60,7 +60,9 @@ class StoreScaffold extends StatelessWidget {
                   ),
                   onDestinationSelected: (index) {
                     if (index != selectedIndex) {
-                      context.go(const ['/', '/explore', '/account'][index]);
+                      context.go(
+                        const ['/', '/explore', '/account', '/ai'][index],
+                      );
                     }
                   },
                   destinations: const [
@@ -77,6 +79,10 @@ class StoreScaffold extends StatelessWidget {
                       icon: Icon(Icons.person_outline_rounded),
                       selectedIcon: Icon(Icons.person_rounded),
                       label: 'Tài khoản',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.auto_awesome_outlined),
+                      label: 'AI Stylist',
                     ),
                   ],
                 ),

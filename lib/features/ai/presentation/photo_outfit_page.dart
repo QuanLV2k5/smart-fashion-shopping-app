@@ -1,3 +1,5 @@
+import 'ai_conversation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,7 +43,7 @@ class _PhotoOutfitPageState extends ConsumerState<PhotoOutfitPage> {
   final notes = TextEditingController();
   final scroll = ScrollController();
   GarmentCategory category = GarmentCategory.top;
-  String style = 'Casual', occasion = 'Đi chơi';
+  String style = 'Casual', occasion = 'Đi chơi', audience = 'Unisex';
   int step = 0, revision = 0;
   bool busy = false;
   String busyLabel = '', error = '';
@@ -191,6 +193,7 @@ class _PhotoOutfitPageState extends ConsumerState<PhotoOutfitPage> {
     }
     final request = AiRequest(
       style: style,
+      audience: audience,
       occasion: occasion,
       budget: int.parse(budget.text),
       notes: notes.text.trim(),
@@ -289,6 +292,7 @@ class _PhotoOutfitPageState extends ConsumerState<PhotoOutfitPage> {
         title: 'Phối đồ từ ảnh',
         onBack: back,
         trailing: const CartButton(),
+        navigation: const AiBottomNavigation(),
         footer: SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
@@ -626,7 +630,7 @@ class _PhotoOutfitPageState extends ConsumerState<PhotoOutfitPage> {
           initialValue: occasion,
           decoration: const InputDecoration(labelText: 'Dịp sử dụng'),
           items: [
-            for (final v in ['Đi chơi', 'Đi làm', 'Đi học', 'Dự tiệc'])
+            for (final v in aiOccasions)
               DropdownMenuItem(value: v, child: Text(v)),
           ],
           onChanged: (v) => setState(() => occasion = v!),
@@ -635,7 +639,7 @@ class _PhotoOutfitPageState extends ConsumerState<PhotoOutfitPage> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final v in ['Casual', 'Tối giản', 'Công sở'])
+            for (final v in aiStyles)
               ChoiceChip(
                 label: Text(v),
                 selected: style == v,
@@ -660,6 +664,15 @@ class _PhotoOutfitPageState extends ConsumerState<PhotoOutfitPage> {
                 ? 'Nhập từ 50.000 đến 20.000.000đ.'
                 : null;
           },
+        ),
+        DropdownButtonFormField<String>(
+          initialValue: audience,
+          decoration: const InputDecoration(labelText: 'Chọn trang phục cho'),
+          items: [
+            for (final v in ['Nam', 'Nữ', 'Unisex'])
+              DropdownMenuItem(value: v, child: Text(v)),
+          ],
+          onChanged: (v) => setState(() => audience = v!),
         ),
         TextFormField(
           controller: notes,
@@ -686,6 +699,27 @@ class _PhotoOutfitPageState extends ConsumerState<PhotoOutfitPage> {
         message: 'Catalog hiện chưa có phương án đáp ứng món đã có và ngân sách của bạn. Hãy đổi nhu cầu hoặc thử món đồ khác.',
       ),
     ] else ...[
+      OutlinedButton.icon(
+        onPressed: () async {
+          final updated = await showAiConversation(
+            context,
+            lastRequest!,
+            outfit,
+          );
+          if (!mounted || updated == null) return;
+          setState(() {
+            result = updated.outfit;
+            lastRequest = updated.request;
+            style = updated.request.style;
+            occasion = updated.request.occasion;
+            audience = updated.request.audience;
+            budget.text = '${updated.request.budget}';
+            notes.text = updated.request.notes;
+          });
+        },
+        icon: const Icon(Icons.chat_bubble_outline),
+        label: const Text('Trò chuyện & chỉnh bộ đồ'),
+      ),
       Text(
         'Mua thêm để hoàn thiện bộ đồ',
         style: Theme.of(context).textTheme.titleLarge,

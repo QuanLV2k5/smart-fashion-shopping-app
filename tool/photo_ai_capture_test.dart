@@ -92,5 +92,9 @@ void main() {
     await tester.ensureVisible(find.text('Xem sản phẩm'));
     await tester.pumpAndSettle();
     await capture('ai-photo-result-items-fixture-390');
+    await tester.ensureVisible(find.text('Trò chuyện & chỉnh bộ đồ'));
+    await tester.tap(find.text('Trò chuyện & chỉnh bộ đồ'));
+    await tester.pumpAndSettle();
+    await capture('ai-chat-fixture-390');
   });
 }

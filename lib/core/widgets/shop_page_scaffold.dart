@@ -12,6 +12,7 @@ class ShopPageScaffold extends StatelessWidget {
     required this.body,
     this.trailing,
     this.footer,
+    this.navigation,
     super.key,
   });
   final String title;
@@ -19,6 +20,7 @@ class ShopPageScaffold extends StatelessWidget {
   final Widget body;
   final Widget? trailing;
   final Widget? footer;
+  final Widget? navigation;
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
@@ -74,6 +76,7 @@ class ShopPageScaffold extends StatelessWidget {
                     child: footer!,
                   ),
                 ),
+              ?navigation,
             ],
           ),
         ),

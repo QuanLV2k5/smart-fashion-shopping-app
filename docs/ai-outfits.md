@@ -2,6 +2,18 @@
 
 ## Phạm vi
 
+### Hội thoại và lựa chọn trang phục 0.1.7
+
+Thanh điều hướng dưới có thêm **AI Stylist**. Hai luồng tư vấn thường và từ ảnh có cùng lựa chọn Nam/Nữ/Unisex, bảy phong cách và bảy dịp sử dụng. Đây là lựa chọn trang phục do người dùng khai báo; không suy đoán giới tính từ ảnh. Catalog hiện chưa có trường giới tính chuyên biệt; backend dùng danh mục/mô tả rõ ràng để lọc, các món trung tính vẫn được dùng.
+
+Sau kết quả, chọn **Trò chuyện & chỉnh bộ đồ**. Có thể khóa tối đa ba món, nhắn “giữ quần, đổi áo”, “tìm giày rẻ hơn” hoặc điều chỉnh ngân sách. Bấm **Áp dụng bộ đồ này** để đưa kết quả về trang phối đồ rồi thêm giỏ. Đóng panel sẽ bỏ các chỉnh sửa chưa áp dụng; hội thoại chỉ nằm trong phiên panel, chưa lưu lịch sử lên database.
+
+Action `chat` của `ai-outfits` nhận request hiện tại, `currentIds`, `keepIds`, `message` tối đa 400 ký tự. Gemini trả kế hoạch có cấu trúc; server bắt buộc món thay đúng vai trò, món yêu cầu rẻ hơn có giá thấp hơn, giữ các món không thay và không đổi món đang khóa. Trạng thái món đang giữ được truyền qua các lượt, bao gồm câu vừa giữ món này vừa đổi món khác. Không có phương án hoặc câu mơ hồ thì trả câu hỏi/thông báo và giữ bộ hiện tại. Giá/stock được đọc lại sau AI. Response riêng có `chatVersion:1`.
+
+Gemini có thể được gọi hai lần cho một lượt chat (hiểu câu và chọn bộ); quota app vẫn tính một request cho lượt đó, client chờ tối đa 110 giây. Deploy thêm `chat.mjs` cùng bốn file backend trước đây; không cần migration/schema mới. Secret Gemini vẫn chỉ ở server.
+
+Cloud smoke ngày 21/11: giữ sneaker, thay quần 329.000đ bằng jeans 249.000đ; tổng giảm từ **688.000đ xuống 608.000đ**. Lượt sau giữ thêm jeans và từ chối đổi sneaker đang khóa. Fixture Auth riêng đã dọn. Evidence: `docs/testing/evidence/chat-ai-live-2026-11-21.json`.
+
 Trang chủ → Phối đồ AI → tư vấn theo nhu cầu, hoặc **Phối từ ảnh món đồ đã có** → Gemini nhận diện ảnh → người dùng kiểm tra/sửa thuộc tính → nhập nhu cầu → phối với sản phẩm Supabase → chọn biến thể và thêm giỏ.
 Ngân sách chỉ tính sản phẩm mua thêm, chưa gồm vận chuyển. Món người dùng đã có không có ID sản phẩm shop, không tính tiền và không thêm vào giỏ. Chưa lưu lịch sử chat/outfit hoặc tủ đồ cá nhân.
 

@@ -1,5 +1,6 @@
 import {AiError, parseInput, recommend, validateOutfit} from './core.mjs';
 import {parseImage,analyzeGarment} from './vision.mjs';
+import {parseChat,converse} from './chat.mjs';
 const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
 // Bound streamed bodies too: content-length is optional and not trustworthy.
@@ -37,9 +38,9 @@ Deno.serve(async (req: Request) => {
     const user = await userRes.json();
     if (!user.id) throw new AiError('UNAUTHORIZED',401);
     const data = await readInput(req);
-    if (!data || typeof data !== 'object' || Array.isArray(data) || (data.action != null && !['analyze','recommend'].includes(data.action))) throw new AiError('INVALID_INPUT');
+    if (!data || typeof data !== 'object' || Array.isArray(data) || (data.action != null && !['analyze','recommend','chat'].includes(data.action))) throw new AiError('INVALID_INPUT');
     const analyzing = data.action === 'analyze';
-    const input = analyzing ? parseImage(data.image) : parseInput(data);
+    const input = analyzing ? parseImage(data.image) : data.action==='chat' ? parseChat(data) : parseInput(data);
     const quota = await fetch(`${url}/rest/v1/rpc/consume_ai_request`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(8000)});
     if (!quota.ok) throw new AiError('AI_NOT_CONFIGURED',503);
     if (await quota.json() !== true) throw new AiError('RATE_LIMITED',429);
@@ -51,6 +52,20 @@ Deno.serve(async (req: Request) => {
       return await res.json();
     };
     const catalog = await readCatalog();
+    if(data.action==='chat') {
+      const reply=await converse(input,catalog,options);
+      if(reply.outfit) {
+        const fresh=await readCatalog();
+        for(const check of reply.cheaperChecks??[]) {
+          const old=fresh.find((p:{id:string})=>p.id===check.oldId);
+          const replacement=fresh.find((p:{id:string})=>p.id===check.newId);
+          if(!old || !replacement || replacement.price_vnd>=old.price_vnd) throw new AiError('INVALID_AI_RESPONSE',502);
+        }
+        reply.outfit=validateOutfit({productIds:reply.outfit.products.map((p:{id:string})=>p.id),explanation:reply.outfit.explanation},fresh,reply.request.budget,reply.request.keepIds,reply.request.ownedGarment);
+      }
+      const {cheaperChecks,...publicReply}=reply;
+      return json({...publicReply,provider:'gemini',chatVersion:1});
+    }
     const result = await recommend(input,catalog,options);
     // Re-read after generation: never return a product just hidden/sold out/over budget.
     const fresh = result.products.length ? await readCatalog() : [];

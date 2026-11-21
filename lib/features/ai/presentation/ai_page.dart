@@ -1,3 +1,5 @@
+import 'ai_conversation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,7 +35,7 @@ class _AiPageState extends ConsumerState<AiPage> {
   final form = GlobalKey<FormState>();
   final budget = TextEditingController(text: '500000');
   final notes = TextEditingController();
-  String style = 'Casual', occasion = 'Đi chơi';
+  String style = 'Casual', occasion = 'Đi chơi', audience = 'Unisex';
   bool busy = false;
   int revision = 0;
   AiOutfit? outfit;
@@ -68,6 +70,7 @@ class _AiPageState extends ConsumerState<AiPage> {
     }
     final req = AiRequest(
       style: style,
+      audience: audience,
       occasion: occasion,
       budget: int.parse(budget.text),
       notes: notes.text.trim(),
@@ -134,6 +137,7 @@ class _AiPageState extends ConsumerState<AiPage> {
         }
       },
       trailing: const CartButton(),
+      navigation: const AiBottomNavigation(),
       footer: busy
           ? null
           : SizedBox(
@@ -233,6 +237,27 @@ class _AiPageState extends ConsumerState<AiPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       spacing: 16,
                       children: [
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            final updated = await showAiConversation(
+                              context,
+                              lastRequest!,
+                              result,
+                            );
+                            if (!mounted || updated == null) return;
+                            setState(() {
+                              outfit = updated.outfit;
+                              lastRequest = updated.request;
+                              style = updated.request.style;
+                              occasion = updated.request.occasion;
+                              audience = updated.request.audience;
+                              budget.text = '${updated.request.budget}';
+                              notes.text = updated.request.notes;
+                            });
+                          },
+                          icon: const Icon(Icons.chat_bubble_outline),
+                          label: const Text('Trò chuyện & chỉnh bộ đồ'),
+                        ),
                         Text(
                           '${lastRequest!.style.toUpperCase()} / ${lastRequest!.occasion.toUpperCase()}',
                           style: Theme.of(context).textTheme.bodySmall
@@ -352,7 +377,7 @@ class _AiPageState extends ConsumerState<AiPage> {
                       spacing: 12,
                       runSpacing: 8,
                       children: [
-                        for (final v in ['Casual', 'Tối giản', 'Công sở'])
+                        for (final v in aiStyles)
                           ChoiceChip(
                             label: Text(v),
                             selected: style == v,
@@ -374,12 +399,7 @@ class _AiPageState extends ConsumerState<AiPage> {
                         labelText: 'Dịp sử dụng',
                       ),
                       items: [
-                        for (final v in [
-                          'Đi chơi',
-                          'Đi làm',
-                          'Đi học',
-                          'Dự tiệc',
-                        ])
+                        for (final v in aiOccasions)
                           DropdownMenuItem(value: v, child: Text(v)),
                       ],
                       onChanged: (v) => setState(() => occasion = v!),
@@ -401,6 +421,17 @@ class _AiPageState extends ConsumerState<AiPage> {
                             ? 'Nhập từ 50.000 đến 20.000.000đ.'
                             : null;
                       },
+                    ),
+                    DropdownButtonFormField<String>(
+                      initialValue: audience,
+                      decoration: const InputDecoration(
+                        labelText: 'Chọn trang phục cho',
+                      ),
+                      items: [
+                        for (final v in ['Nam', 'Nữ', 'Unisex'])
+                          DropdownMenuItem(value: v, child: Text(v)),
+                      ],
+                      onChanged: (v) => setState(() => audience = v!),
                     ),
                     TextFormField(
                       controller: notes,
