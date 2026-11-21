@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-21T11:06:39.5088976+07:00",
+  "project": "xvpdkbzdyevjbvvfeksc",
+  "fixtureSource": "catalog atlas crop, blue Oxford shirt",
+  "checks": [
+    "unauthenticated request rejected: 401",
+    "real Gemini received JPEG bytes and identified an owned top",
+    "live shop products complete owned shirt; total includes only new purchases",
+    "real mutate_cart adds only shop variants; retry is idempotent",
+    "50000 VND budget returns no-match",
+    "replacement preserves owned garment and kept products or returns no-match",
+    "real blank image rejected without fabricating a garment",
+    "old text-only AI flow still works on cloud"
+  ],
+  "analysis": {
+    "elapsedMs": 3063,
+    "garment": {
+      "category": "top",
+      "name": "Áo sơ mi dài tay",
+      "color": "Xanh dương nhạt",
+      "pattern": "Trơn",
+      "fit": "Vừa vặn",
+      "details": "Cổ bẻ có cúc đính ở góc cổ, hàng cúc dọc phía trước, một túi ngực bên trái, tay dài có cổ tay đính cúc"
+    },
+    "status": "ok"
+  },
+  "outfit": {
+    "explanation": "Bộ trang phục phối áo sơ mi dài tay xanh dương nhạt đã có với Quần suông Studio màu đen (329.000đ) và Sneaker Everyday màu trắng (359.000đ) với tổng giá 688.000đ, nằm trong ngân sách 700.000đ. Sự kết hợp giữa sắc xanh nhạt thanh lịch và quần suông đen lịch sự, trẻ trung rất phù hợp cho dịp đi học và bảo vệ đồ án theo phong cách công sở.",
+    "elapsedMs": 2252,
+    "products": [
+      {
+        "id": "20000000-0000-0000-0000-000000000004",
+        "code": "SF04",
+        "name": "Quần suông Studio",
+        "price_vnd": 329000
+      },
+      {
+        "id": "20000000-0000-0000-0000-000000000008",
+        "code": "SF08",
+        "name": "Sneaker Everyday",
+        "price_vnd": 359000
+      }
+    ],
+    "totalVnd": 688000
+  },
+  "cart": {
+    "duplicateRequestAddedTwice": false,
+    "totalVnd": 688000.0,
+    "lineCount": 2
+  },
+  "replacement": {
+    "products": [
+      {
+        "code": "SF02",
+        "name": "Jeans Straight",
+        "price_vnd": 249000
+      },
+      {
+        "code": "SF08",
+        "name": "Sneaker Everyday",
+        "price_vnd": 359000
+      }
+    ],
+    "totalVnd": 608000
+  },
+  "negativeImageStatus": "unclear",
+  "legacy": {
+    "products": [
+      {
+        "code": "SF01",
+        "name": "Áo thun Essential"
+      },
+      {
+        "code": "SF02",
+        "name": "Jeans Straight"
+      }
+    ],
+    "totalVnd": 448000
+  },
+  "fixtureRemoved": true
+}
