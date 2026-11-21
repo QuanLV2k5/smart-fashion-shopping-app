@@ -1,7 +1,8 @@
+import {candidatePool} from './candidate_pool.mjs';
 import {normalizeGarment, compatibleStructure, buildOwnedCandidates, productRole} from './garment.mjs';
 export function audienceAllows(product,audience) {
   const text=String(product.name+' '+(product.description??'')).toLowerCase();
-  if (audience==='Nam' && (product.categories?.slug==='vay-dam' || /\bnữ\b/u.test(text))) return false;
+  if (audience==='Nam' && (product.categories?.slug==='vay-dam' || /(^|[\s.,;])nữ(?=[\s.,;]|$)/u.test(text))) return false;
   if (audience==='Nữ' && /\bnam\b/u.test(text)) return false;
   return true;
 }
@@ -48,21 +49,21 @@ export function buildCandidates(input, catalog) {
   const options = [];
   for (const [target, limit] of [[2,32],[3,24],[4,8]]) {
     if (target <= keep.length) continue;
-    let count = 0, visits = 0;
+    let visits = 0; const pool=candidatePool(limit,JSON.stringify([input.style,input.occasion,input.audience]));
     const walk = (start, chosen, total) => {
-      if (++visits > 20000 || total > input.budget || count >= limit) return;
+      if (++visits > 20000 || total > input.budget) return;
       const primary = chosen.map(p => p.categories?.slug).filter(c => ['ao','quan','ao-khoac'].includes(c));
       if (new Set(primary).size !== primary.length) return;
       if (chosen.length === target) {
-        options.push({outfitId:`O${options.length+1}`,productIds:chosen.map(p=>p.id),totalVnd:total});
-        count++;
+        pool.add({productIds:chosen.map(p=>p.id),totalVnd:total});
         return;
       }
-      for (let i=start; i<others.length && count<limit && visits<20000; i++) walk(i+1,[...chosen,others[i]],total+others[i].price_vnd);
+      for (let i=start; i<others.length && visits<20000; i++) walk(i+1,[...chosen,others[i]],total+others[i].price_vnd);
     };
     walk(0,keep,keep.reduce((sum,p)=>sum+p.price_vnd,0));
+    options.push(...pool.values());
   }
-  return options;
+  return options.map((option,i)=>({...option,outfitId:`O${i+1}`}));
 }
 export async function recommend(input, catalog, {apiKey, model, fetcher = fetch}) {
   if (!apiKey || !model || !/^[a-zA-Z0-9.-]+$/.test(model)) throw new AiError('AI_NOT_CONFIGURED', 503);

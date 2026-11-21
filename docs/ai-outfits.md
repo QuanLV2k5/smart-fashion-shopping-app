@@ -2,6 +2,20 @@
 
 ## Phạm vi
 
+### Catalog mở rộng và navigation 0.1.8
+
+Navigation: **Trang chủ → Khám phá → AI Stylist → Tài khoản**. Account dùng index 3; AI dùng index 2 ở cả hai màn tư vấn.
+
+Dev đã bổ sung 24 sản phẩm SF13–SF36, nâng catalog thành **36 sản phẩm/117 biến thể**. Tổng gồm 8 áo, 9 quần, 4 áo khoác, 2 váy/đầm và 13 giày/phụ kiện. Các món mới có ảnh riêng, một màu đúng ảnh, nhiều size; XL/43 được để hết hàng làm ca kiểm thử. Giá demo mới 79.000–399.000đ, vật liệu/giá/stock là dữ liệu mô phỏng, không phải hàng đang bán thật.
+
+Seed bổ sung: `supabase/seeds/20261121_extended_demo_catalog.sql`, chạy chỉ trên dev sau khi upload ảnh. Seed dùng ON CONFLICT DO NOTHING, giữ mọi dữ liệu cũ và có thể chạy lại. Migration mới `20261121000100_product_images_storage.sql` tạo bucket product-images cho ảnh catalog công khai; customer chỉ đọc, quyền ghi dùng private.is_admin(). Ảnh AI/người dùng không lưu vào bucket này.
+
+24 ảnh JPEG đã upload tại `product-images/demo-20261121/SF13.jpg`…`SF36.jpg`; cả 24 URL trả HTTP 200. Nguồn là atlas mô phỏng do công cụ image_gen built-in tạo, file gốc `assets/images/catalog/products-atlas-extended.png`; bản tách ở `assets/images/catalog/extended/`. Prompt: một atlas ảnh sản phẩm studio nền ivory, lưới chính xác 6 cột × 4 hàng, không chữ/logo/người; hàng 1 áo thun đen, oversize ivory, polo navy, blouse hồng, sơ mi sọc xanh, áo có mũ sage; hàng 2 jeans xanh nhạt, cargo đen, chinos be, quần suông xám đậm, shorts be, jogger navy; hàng 3 canvas trắng, running đen, loafer nâu, sandal be, slide đen, espadrille navy; hàng 4 mũ lưỡi trai đen, bucket be, mũ navy, mũ cói be, cardigan cam đất, áo khoác denim indigo. Metadata được đối chiếu lại với ảnh thực tế được tạo; ảnh sage được ghi là áo khoác gió.
+
+`candidate_pool.mjs` lấy mẫu xác định trên các tổ hợp hợp lệ thay vì chỉ giữ các tổ hợp đầu tiên. Vẫn giới hạn 64 ứng viên và 20.000 lượt duyệt/mức số món; chưa phải tìm tối ưu toàn bộ catalog lớn. Unit test catalog 36 món kiểm tra độ phủ ít nhất 30 ID và kết quả xác định; thay style làm đổi mẫu ứng viên. Ảnh/model vẫn có giới hạn; tăng dữ liệu và smoke test không chứng minh tư vấn thời trang luôn đúng.
+
+Evidence: `docs/testing/evidence/expanded-catalog-live-2026-11-21.json`, `extended-catalog-manifest.json`, `extended-catalog-image-checks.json`. Cloud đã thử Nam/Casual 300k, Unisex/Streetwear 500k, Nữ/Thanh lịch 600k; tất cả không vượt ngân sách. Streetwear trả Cargo Urban + Slide Black + mũ Core Black = **437.000đ**; thêm biến thể SF13 vào giỏ fixture thật đạt, fixture đã dọn.
+
 ### Hội thoại và lựa chọn trang phục 0.1.7
 
 Thanh điều hướng dưới có thêm **AI Stylist**. Hai luồng tư vấn thường và từ ảnh có cùng lựa chọn Nam/Nữ/Unisex, bảy phong cách và bảy dịp sử dụng. Đây là lựa chọn trang phục do người dùng khai báo; không suy đoán giới tính từ ảnh. Catalog hiện chưa có trường giới tính chuyên biệt; backend dùng danh mục/mô tả rõ ràng để lọc, các món trung tính vẫn được dùng.

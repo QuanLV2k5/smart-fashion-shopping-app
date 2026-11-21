@@ -1,3 +1,4 @@
+import {candidatePool} from './candidate_pool.mjs';
 // Shared visual attributes and outfit structure. Price/stock never come from AI.
 export const garmentCategories = ['top', 'bottom', 'dress', 'outerwear', 'shoes', 'bag', 'accessory'];
 export function normalizeGarment(value) {
@@ -38,21 +39,21 @@ export function buildOwnedCandidates(input, catalog) {
   const options = [];
   for (const [target,limit] of [[1,16],[2,24],[3,16],[4,8]]) {
     if (target <= keep.length) continue;
-    let count = 0, visits = 0;
+    let visits = 0; const pool=candidatePool(limit,JSON.stringify([input.style,input.occasion,input.audience]));
     const walk = (start, chosen, total) => {
-      if (++visits > 20000 || total > input.budget || count >= limit) return;
+      if (++visits > 20000 || total > input.budget) return;
       const roles = [input.ownedGarment.category, ...chosen.map(productRole)];
       if (roles.includes(null) || new Set(roles).size !== roles.length) return;
       if (roles.includes('dress') && (roles.includes('top') || roles.includes('bottom'))) return;
       if (chosen.length === target) {
         if (!compatibleStructure(chosen,input.ownedGarment)) return;
-        options.push({outfitId:`O${options.length+1}`,productIds:chosen.map(p=>p.id),totalVnd:total});
-        count++;
+        pool.add({productIds:chosen.map(p=>p.id),totalVnd:total});
         return;
       }
-      for (let i=start;i<others.length && count<limit && visits<20000;i++) walk(i+1,[...chosen,others[i]],total+others[i].price_vnd);
+      for (let i=start;i<others.length && visits<20000;i++) walk(i+1,[...chosen,others[i]],total+others[i].price_vnd);
     };
     walk(0,keep,keep.reduce((sum,p)=>sum+p.price_vnd,0));
+    options.push(...pool.values());
   }
-  return options;
+  return options.map((option,i)=>({...option,outfitId:`O${i+1}`}));
 }

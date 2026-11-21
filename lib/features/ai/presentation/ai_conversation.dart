@@ -55,9 +55,9 @@ class AiBottomNavigation extends StatelessWidget {
   const AiBottomNavigation({super.key});
   @override
   Widget build(BuildContext context) => NavigationBar(
-    selectedIndex: 3,
+    selectedIndex: 2,
     onDestinationSelected: (i) {
-      if (i != 3) context.go(const ['/', '/explore', '/account', '/ai'][i]);
+      if (i != 2) context.go(const ['/', '/explore', '/ai', '/account'][i]);
     },
     destinations: const [
       NavigationDestination(
@@ -66,12 +66,12 @@ class AiBottomNavigation extends StatelessWidget {
       ),
       NavigationDestination(icon: Icon(Icons.search), label: 'Khám phá'),
       NavigationDestination(
-        icon: Icon(Icons.person_outline),
-        label: 'Tài khoản',
-      ),
-      NavigationDestination(
         icon: Icon(Icons.auto_awesome_outlined),
         label: 'AI Stylist',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.person_outline),
+        label: 'Tài khoản',
       ),
     ],
   );

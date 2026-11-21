@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-21T21:34:38.8595473+07:00",
+  "project": "xvpdkbzdyevjbvvfeksc",
+  "fixtureSource": "catalog atlas crop, blue Oxford shirt",
+  "checks": [
+    "unauthenticated request rejected: 401",
+    "real Gemini received JPEG bytes and identified an owned top",
+    "36 cloud products, real outfit cases across Nam/Nữ/Unisex and styles, real new-product variant added to isolated cart"
+  ],
+  "analysis": {
+    "elapsedMs": 9018,
+    "status": "ok",
+    "garment": {
+      "category": "top",
+      "name": "Áo sơ mi dài tay",
+      "color": "Xanh dương",
+      "pattern": "Trơn",
+      "fit": "Vừa vặn",
+      "details": "Cổ áo sơ mi có nút đính góc, hàng nút dọc phía trước, một túi ngực bên trái, tay áo dài có cổ tay cài nút"
+    }
+  },
+  "catalogCount": 36,
+  "cases": [
+    {
+      "totalVnd": 249000,
+      "products": [
+        {
+          "code": "SF02",
+          "name": "Jeans Straight",
+          "price_vnd": 249000
+        }
+      ],
+      "style": "Casual",
+      "explanation": "Phối áo sơ mi dài tay màu xanh dương trơn đã có với quần Jeans Straight màu xanh denim để tạo tổng thể trang phục đi chơi phong cách Casual hài hòa và năng động. Cặp màu sắc ton-sur-ton giúp bộ đồ gọn gàng, vừa vặn và dễ mặc trong nhiều hoàn cảnh.",
+      "audience": "Nam",
+      "budget": 300000
+    },
+    {
+      "totalVnd": 437000,
+      "products": [
+        {
+          "code": "SF20",
+          "name": "Quần Cargo Urban",
+          "price_vnd": 269000
+        },
+        {
+          "code": "SF29",
+          "name": "Dép Slide Black",
+          "price_vnd": 89000
+        },
+        {
+          "code": "SF31",
+          "name": "Mũ lưỡi trai Core Black",
+          "price_vnd": 79000
+        }
+      ],
+      "style": "Streetwear",
+      "explanation": "Phối áo sơ mi dài tay xanh dương trơn đã có với quần Cargo Urban màu đen, dép Slide Black màu đen và mũ lưỡi trai Core Black màu đen tạo phong cách Streetwear đi chơi năng động. Sắc xanh dương của áo sơ mi kết hợp hài hòa với tổng thể trang phục tối màu.",
+      "audience": "Unisex",
+      "budget": 500000
+    },
+    {
+      "totalVnd": 199000,
+      "products": [
+        {
+          "code": "SF19",
+          "name": "Jeans Light Straight",
+          "price_vnd": 199000
+        }
+      ],
+      "style": "Thanh lịch",
+      "explanation": "Phối áo sơ mi dài tay màu xanh dương trơn sẵn có với quần Jeans Light Straight màu xanh nhạt để tạo tổng thể trang phục mang phong cách thanh lịch, hài hòa và đồng điệu về màu sắc. Set đồ gọn gàng, thoải mái rất phù hợp cho dịp đi chơi.",
+      "audience": "Nữ",
+      "budget": 600000
+    }
+  ],
+  "newProductCart": {
+    "code": "SF13",
+    "priceVnd": 99000,
+    "lineCount": 1
+  },
+  "fixtureRemoved": true
+}

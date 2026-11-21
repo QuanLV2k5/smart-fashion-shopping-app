@@ -81,5 +81,14 @@ void main() {
     );
     expect(find.byType(NavigationDestination), findsNWidgets(4));
     expect(find.text('AI Stylist'), findsOneWidget);
+    final labels = tester
+        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .map((d) => d.label)
+        .toList();
+    expect(labels, ['Trang chủ', 'Khám phá', 'AI Stylist', 'Tài khoản']);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      2,
+    );
   });
 }
