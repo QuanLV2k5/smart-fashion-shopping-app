@@ -200,7 +200,7 @@ class AdminProductController extends AsyncNotifier<void> {
     }
   }
 
-  Future<bool> saveVariant({
+  Future<String?> saveVariant({
     String? id,
     required String productId,
     required String sku,
@@ -213,7 +213,7 @@ class AdminProductController extends AsyncNotifier<void> {
     state = const AsyncLoading();
     try {
       final repo = ref.read(adminRepositoryProvider);
-      await repo.saveVariant(
+      final variantId = await repo.saveVariant(
         id: id,
         productId: productId,
         sku: sku,
@@ -226,13 +226,13 @@ class AdminProductController extends AsyncNotifier<void> {
       state = const AsyncData(null);
       ref.invalidate(adminProductsProvider);
       ref.invalidate(adminProductDetailProvider(productId));
-      return true;
+      return variantId;
     } catch (e, st) {
       state = AsyncError(e, st);
       if (e is AdminStockConflictFailure) {
         rethrow;
       }
-      return false;
+      return null;
     }
   }
 

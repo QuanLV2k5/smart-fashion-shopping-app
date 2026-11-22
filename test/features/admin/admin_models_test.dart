@@ -154,5 +154,111 @@ void main() {
       expect(failure.currentStock, 5);
       expect(failure.currentRevision, 4);
     });
+
+    test('stock concurrency: stale revision rejected when order changes revision', () {
+      // Mô phỏng: Ban đầu biến thể có stock = 20, revision = 1
+      var remoteVariant = const AdminVariant(
+        id: 'v_sync',
+        productId: 'p1',
+        sku: 'SF01_L',
+        size: 'L',
+        color: 'Đen',
+        stock: 20,
+        stockRevision: 1,
+      );
+
+      // Admin mở form đọc dữ liệu tại thời điểm revision = 1
+      final adminSnapshotRevision = remoteVariant.stockRevision;
+
+      // Khách hàng đặt đơn hàng hoặc hủy đơn làm tồn kho và revision thay đổi trên server
+      // (Checkout COD trừ 2 sản phẩm, revision tăng lên 2)
+      remoteVariant = remoteVariant.copyWith(
+        stock: 18,
+        stockRevision: remoteVariant.stockRevision + 1,
+      );
+
+      // Hàm giả lập RPC set_variant_stock kiểm tra revision
+      void setVariantStockRPC({
+        required String variantId,
+        required int expectedRevision,
+        required int newStock,
+      }) {
+        if (expectedRevision != remoteVariant.stockRevision) {
+          throw AdminStockConflictFailure(
+            'SF_STOCK_VERSION_CONFLICT: Tồn kho đã bị thay đổi.',
+            variantId: variantId,
+            currentStock: remoteVariant.stock,
+            currentRevision: remoteVariant.stockRevision,
+          );
+        }
+      }
+
+      // Admin gửi yêu cầu cập nhật với revision cũ (1) trong khi server đã là 2
+      expect(
+        () => setVariantStockRPC(
+          variantId: remoteVariant.id,
+          expectedRevision: adminSnapshotRevision,
+          newStock: 25,
+        ),
+        throwsA(isA<AdminStockConflictFailure>()),
+      );
+
+      // Đảm bảo tồn kho server không bị ghi đè dữ liệu cũ
+      expect(remoteVariant.stock, 18);
+      expect(remoteVariant.stockRevision, 2);
+    });
+
+    test('stock concurrency: stale revision rejected when order changes revision', () {
+      // Mô phỏng: Ban đầu biến thể có stock = 20, revision = 1
+      var remoteVariant = const AdminVariant(
+        id: 'v_sync',
+        productId: 'p1',
+        sku: 'SF01_L',
+        size: 'L',
+        color: 'Đen',
+        stock: 20,
+        stockRevision: 1,
+      );
+
+      // Admin mở form đọc dữ liệu tại thời điểm revision = 1
+      final adminSnapshotRevision = remoteVariant.stockRevision;
+
+      // Khách hàng đặt đơn hàng hoặc hủy đơn làm tồn kho và revision thay đổi trên server
+      // (Checkout COD trừ 2 sản phẩm, revision tăng lên 2)
+      remoteVariant = remoteVariant.copyWith(
+        stock: 18,
+        stockRevision: remoteVariant.stockRevision + 1,
+      );
+
+      // Hàm giả lập RPC set_variant_stock kiểm tra revision
+      void setVariantStockRPC({
+        required String variantId,
+        required int expectedRevision,
+        required int newStock,
+      }) {
+        if (expectedRevision != remoteVariant.stockRevision) {
+          throw AdminStockConflictFailure(
+            'SF_STOCK_VERSION_CONFLICT: Tồn kho đã bị thay đổi.',
+            variantId: variantId,
+            currentStock: remoteVariant.stock,
+            currentRevision: remoteVariant.stockRevision,
+          );
+        }
+      }
+
+      // Admin gửi yêu cầu cập nhật với revision cũ (1) trong khi server đã là 2
+      expect(
+        () => setVariantStockRPC(
+          variantId: remoteVariant.id,
+          expectedRevision: adminSnapshotRevision,
+          newStock: 25,
+        ),
+        throwsA(isA<AdminStockConflictFailure>()),
+      );
+
+      // Đảm bảo tồn kho server không bị ghi đè dữ liệu cũ
+      expect(remoteVariant.stock, 18);
+      expect(remoteVariant.stockRevision, 2);
+    });
   });
 }

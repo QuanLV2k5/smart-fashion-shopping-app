@@ -319,8 +319,7 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
-  @override
-  Future<void> saveVariant({
+  Future<String> saveVariant({
     String? id,
     required String productId,
     required String sku,
@@ -334,7 +333,7 @@ class SupabaseAdminRepository implements AdminRepository {
 
     try {
       if (id != null && id.isNotEmpty) {
-        // Cập nhật metadata biến thể: sku, size, color (tách riêng, không bao gồm stock)
+        // Cập nhật metadata biến thể: sku, size, color (tách riêng, tuyệt đối không cập nhật cột stock)
         await backend
             .from('product_variants')
             .update({
@@ -345,7 +344,7 @@ class SupabaseAdminRepository implements AdminRepository {
             .eq('id', id)
             .timeout(const Duration(seconds: 25));
 
-        // Nếu có điều chỉnh tồn kho, gọi RPC set_variant_stock có kiểm tra expected revision
+        // Mọi thao tác điều chỉnh tồn kho của biến thể đã tồn tại BẮT BUỘC dùng RPC set_variant_stock
         if (updateStock) {
           try {
             await backend
@@ -370,20 +369,19 @@ class SupabaseAdminRepository implements AdminRepository {
             }
             if (e.code == '42883' ||
                 e.message.contains('function public.set_variant_stock')) {
-              // Fallback khi migration chưa nạp RPC
-              await backend
-                  .from('product_variants')
-                  .update({'stock': stock})
-                  .eq('id', id)
-                  .timeout(const Duration(seconds: 25));
+              // Báo lỗi cấu hình backend; tuyệt đối không bỏ qua kiểm tra revision hoặc fallback update stock trực tiếp
+              throw const AdminFailure(
+                'Lỗi cấu hình backend: RPC set_variant_stock chưa được cài đặt. Không thể điều chỉnh tồn kho mà không kiểm tra phiên bản (revision).',
+              );
             } else {
               rethrow;
             }
           }
         }
+        return id;
       } else {
-        // Thêm biến thể mới có khai báo tồn ban đầu
-        await backend
+        // Thêm biến thể mới có khai báo tồn ban đầu theo schema
+        final inserted = await backend
             .from('product_variants')
             .insert({
               'product_id': productId,
@@ -392,7 +390,10 @@ class SupabaseAdminRepository implements AdminRepository {
               'color': color.trim(),
               'stock': stock,
             })
+            .select('id')
+            .single()
             .timeout(const Duration(seconds: 25));
+        return inserted['id'] as String;
       }
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
@@ -417,45 +418,11 @@ class SupabaseAdminRepository implements AdminRepository {
     String variantId, {
     int expectedStockRevision = 0,
   }) async {
-    final backend = _requireClient();
-    try {
-      try {
-        await backend
-            .rpc<dynamic>(
-              'set_variant_stock',
-              params: {
-                'p_variant_id': variantId,
-                'p_expected_revision': expectedStockRevision,
-                'p_new_stock': 0,
-              },
-            )
-            .timeout(const Duration(seconds: 25));
-      } on PostgrestException catch (e) {
-        if (e.code == 'PT409' ||
-            e.message.contains('SF_STOCK_VERSION_CONFLICT')) {
-          throw AdminStockConflictFailure(
-            'Tồn kho biến thể đã bị thay đổi bởi đơn hàng. Vui lòng tải lại trước khi đặt tồn về 0.',
-            variantId: variantId,
-            currentRevision: expectedStockRevision,
-          );
-        }
-        if (e.code == '42883' ||
-            e.message.contains('function public.set_variant_stock')) {
-          await backend
-              .from('product_variants')
-              .update({'stock': 0})
-              .eq('id', variantId)
-              .timeout(const Duration(seconds: 25));
-        } else {
-          rethrow;
-        }
-      }
-    } on PostgrestException catch (e) {
-      throw AdminFailure('Lỗi cập nhật tồn kho biến thể: ${e.message}');
-    } catch (e) {
-      if (e is AdminFailure) rethrow;
-      throw AdminFailure('Không thể cập nhật biến thể: $e');
-    }
+    // Vô hiệu hóa thao tác xóa cứng biến thể để bảo đảm toàn vẹn khóa ngoại (on delete restrict)
+    // với bảng order_items và chính sách RLS hiện hành (không có quyền DELETE).
+    throw const AdminFailure(
+      'Thao tác xóa biến thể đã lưu tạm thời bị vô hiệu hóa để bảo đảm toàn vẹn dữ liệu đơn hàng. Để ngừng bán sản phẩm, vui lòng tắt tùy chọn hiển thị sản phẩm (is_visible).',
+    );
   }
 
   @override

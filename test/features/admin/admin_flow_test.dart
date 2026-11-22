@@ -143,7 +143,7 @@ class FakeAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> saveVariant({
+  Future<String> saveVariant({
     String? id,
     required String productId,
     required String sku,
@@ -171,6 +171,7 @@ class FakeAdminRepository implements AdminRepository {
     if (shouldFailVariantSave) {
       throw const AdminFailure('Lỗi lưu biến thể giả lập');
     }
+    return id ?? 'v_saved_${DateTime.now().millisecondsSinceEpoch}';
   }
 
   @override

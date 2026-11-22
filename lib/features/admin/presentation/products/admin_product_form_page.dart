@@ -387,7 +387,8 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
     final List<String> failedVariants = [];
     String? firstErrorMessage;
 
-    for (final variant in _variants) {
+    for (var i = 0; i < _variants.length; i++) {
+      final variant = _variants[i];
       final initialVariant = baseProduct?.variants
           .cast<AdminVariant?>()
           .firstWhere((v) => v?.id == variant.id, orElse: () => null);
@@ -396,7 +397,7 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
           initialVariant == null || initialVariant.stock != variant.stock;
 
       try {
-        final success = await controller.saveVariant(
+        final savedVariantId = await controller.saveVariant(
           id: variant.id.isNotEmpty ? variant.id : null,
           productId: savedProductId,
           sku: variant.sku,
@@ -408,8 +409,12 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
           updateStock: stockChanged,
         );
 
-        if (!success) {
+        if (savedVariantId == null) {
           failedVariants.add(variant.sku);
+        } else {
+          // Gán lại ID đã lưu cho biến thể để nếu người dùng thử lại sau lỗi ở biến thể khác,
+          // biến thể này đã có ID và sẽ UPDATE thay vì INSERT gây lỗi trùng SKU.
+          _variants[i] = variant.copyWith(id: savedVariantId);
         }
       } on AdminStockConflictFailure catch (e) {
         failedVariants.add('${variant.sku} (xung đột tồn kho)');
@@ -962,28 +967,30 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                               ),
                               onPressed: () => _openVariantDialog(v, idx),
                             ),
-                            IconButton(
-                              icon: Icon(
-                                v.id.isEmpty
-                                    ? Icons.delete_outline
-                                    : Icons.inventory_outlined,
-                                size: 18,
-                                color: AppColors.accent,
-                              ),
-                              tooltip: v.id.isEmpty
-                                  ? 'Xóa biến thể'
-                                  : 'Đặt hết hàng (Tồn = 0)',
-                              onPressed: () {
-                                setState(() {
-                                  if (v.id.isEmpty) {
+                            if (v.id.isEmpty)
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: AppColors.accent,
+                                ),
+                                tooltip: 'Gỡ biến thể chưa lưu khỏi danh sách',
+                                onPressed: () {
+                                  setState(() {
                                     _variants.removeAt(idx);
-                                  } else {
-                                    // Không xóa cứng: Đặt tồn kho về 0 để bảo toàn lịch sử đơn hàng
-                                    _variants[idx] = v.copyWith(stock: 0);
-                                  }
-                                });
-                              },
-                            ),
+                                  });
+                                },
+                              )
+                            else
+                              const IconButton(
+                                icon: Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 18,
+                                  color: AppColors.muted,
+                                ),
+                                tooltip: 'Biến thể đã lưu không thể xóa để bảo toàn lịch sử đơn hàng. Để ngừng bán, hãy tắt hiển thị sản phẩm (is_visible).',
+                                onPressed: null,
+                              ),
                           ],
                         ),
                       ),

@@ -91,6 +91,30 @@ void main() {
       final loaded = await storage.loadCache();
       expect(loaded, isNull);
     });
+
+    test('returns null gracefully when cache JSON is corrupted', () async {
+      await preferences.setString(
+        'smart_fashion_catalog_snapshot_cache',
+        '{corrupted json invalid format: true',
+      );
+      final storage = CatalogCacheStorage(preferences);
+      final loaded = await storage.loadCache();
+      expect(loaded, isNull);
+    });
+
+    test('recovers and overwrites corrupted cache on next save', () async {
+      await preferences.setString(
+        'smart_fashion_catalog_snapshot_cache',
+        'invalid string format',
+      );
+      final storage = CatalogCacheStorage(preferences);
+      await storage.saveCache(sampleSnapshot);
+
+      final loaded = await storage.loadCache();
+      expect(loaded, isNotNull);
+      expect(loaded!.isFromCache, isTrue);
+      expect(loaded.products.first.code, 'SF01');
+    });
   });
 
   group('SupabaseCatalogRepository offline cache fallback', () {
@@ -116,6 +140,19 @@ void main() {
       expect(product!.code, 'SF01');
       expect(product.priceVnd, 199000);
     });
+
+    test(
+      'handles corrupted cache offline gracefully by throwing CatalogFailure',
+      () async {
+        await preferences.setString(
+          'smart_fashion_catalog_snapshot_cache',
+          '{broken json content}',
+        );
+        final storage = CatalogCacheStorage(preferences);
+        final repo = SupabaseCatalogRepository(null, storage);
+        expect(() => repo.loadProduct('p1'), throwsA(isA<CatalogFailure>()));
+      },
+    );
   });
 
   group('CatalogBody offline banner widget test', () {
