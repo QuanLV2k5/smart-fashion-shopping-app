@@ -186,16 +186,7 @@ class AccountPage extends ConsumerWidget {
                     icon: Icons.receipt_long_outlined,
                     title: 'Đơn hàng của tôi',
                     subtitle: 'Theo dõi đơn hàng đã đặt',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Tính năng đơn hàng sẽ có trong Sprint 2.',
-                          ),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    onTap: () => context.push('/account/orders'),
                   ),
                 ],
               ),

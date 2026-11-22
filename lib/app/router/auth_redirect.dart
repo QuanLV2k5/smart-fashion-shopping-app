@@ -10,6 +10,7 @@ String authDestination(String? requested) {
         '/ai/photo',
         '/account',
         '/account/profile',
+        '/account/orders',
         '/cart',
         '/checkout',
         '/addresses',

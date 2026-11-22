@@ -96,6 +96,15 @@ class _Checkout extends ConsumerWidget {
               title: Text(placed.number),
               subtitle: Text(formatVnd(placed.totals.total)),
             ),
+            OutlinedButton(
+              onPressed: () {
+                controller.dismissConfirmation();
+                context.pushReplacement(
+                  '/account/orders/${Uri.encodeComponent(placed.id)}',
+                );
+              },
+              child: const Text('Xem đơn hàng'),
+            ),
           ] else if (checkout?.pending == null && !value.hasError) ...[
             if (quote != null)
               ShopNotice(

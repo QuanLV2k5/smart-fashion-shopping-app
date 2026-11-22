@@ -18,6 +18,8 @@ import '../../features/ai/presentation/photo_outfit_page.dart';
 import '../../features/addresses/presentation/addresses_page.dart';
 import '../../features/addresses/presentation/address_form_page.dart';
 import '../../features/orders/presentation/checkout_page.dart';
+import '../../features/orders/presentation/my_orders_page.dart';
+import '../../features/orders/presentation/order_detail_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
@@ -55,6 +57,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ? '/addresses'
             : path == '/account/profile'
             ? '/account/profile'
+            : path == '/account/orders' || path.startsWith('/account/orders/')
+            ? '/account/orders'
             : '/account';
         return '/login?next=${Uri.encodeComponent(destination)}';
       }
@@ -67,6 +71,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/checkout',
         builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: '/account/orders',
+        builder: (context, state) => const MyOrdersPage(),
+      ),
+      GoRoute(
+        path: '/account/orders/:orderId',
+        builder: (context, state) =>
+            OrderDetailPage(orderId: state.pathParameters['orderId']!),
       ),
       GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
       GoRoute(
