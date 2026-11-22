@@ -119,7 +119,7 @@ class OrdersTest:
         rows = self.http("ADMIN", "product_variants?sku=eq.SF01-WHITE-M&select=id,stock_revision")
         expect(len(rows) == 1, "missing demo variant")
         variant = rows[0]
-        self.rpc("ADMIN", "set_variant_stock", {
+        prepared = self.rpc("ADMIN", "set_variant_stock", {
             "p_variant_id": variant["id"], "p_expected_revision": variant["stock_revision"], "p_new_stock": 1
         })
         quotes = {}
@@ -145,9 +145,16 @@ class OrdersTest:
         self.rpc(other, "get_order", {"p_order_id": order_id}, status=404, error="SF_ORDER_NOT_FOUND")
         self.rpc(other, "list_admin_orders", status=403, error="SF_FORBIDDEN")
         self.http(owner, f"orders?id=eq.{order_id}", status=403)
+        self.http("ADMIN", f"orders?id=eq.{order_id}", {"status": "completed"}, method="PATCH", status=403)
         expect(self.rpc(owner, "place_cod_order", quotes[owner])["replayed"], "REST retry")
+        self.rpc(owner, "place_cod_order", {
+            "p_quote_id": quotes[other]["p_quote_id"], "p_request_id": quotes[owner]["p_request_id"]
+        }, status=409, error="SF_REQUEST_CONFLICT")
         expect(not self.rpc(other, "lookup_order_request",
                             {"p_request_id": quotes[owner]["p_request_id"]})["found"], "receipt isolation")
+        self.rpc("ADMIN", "set_variant_stock", {
+            "p_variant_id": variant["id"], "p_expected_revision": prepared["stock_revision"], "p_new_stock": 1
+        }, status=409, error="SF_STOCK_VERSION_CONFLICT")
         expect(self.http("ADMIN", f"product_variants?id=eq.{variant['id']}&select=stock")[0]["stock"] == 0,
                "last unit was consumed once")
 
