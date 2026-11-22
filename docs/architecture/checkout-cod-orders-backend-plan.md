@@ -57,7 +57,7 @@ Nền hiện có Auth/role server, catalog/địa chỉ, Cart dùng advisory tra
 
 ## Bản triển khai thử trên nhánh backend
 
-D01–D14 vẫn **Pending Review**. Các migration và RPC trên nhánh sử dụng những giả định dưới đây để chạy thử. Cần xác nhận contract và kiểm thử đầu cuối trước khi đưa vào môi trường dùng chung.
+**D01–D14 đã được Quân xác nhận qua tin nhắn riêng**, theo thông tin Phúc cung cấp. Nhóm chưa có nguyên văn tin nhắn trong hồ sơ đối chiếu của PR. Các phương án trong bảng dưới đây và SQL hiện tại được giữ nguyên, từng mục chưa được đối chiếu với nội dung xác nhận.
 
 | ID | Giả định trong bản triển khai |
 |---|---|
@@ -89,7 +89,7 @@ Ngày 22/11/2026, PostgreSQL 18.7 local với Auth/Storage tối giản đã ch�
 
 ### Đối chiếu PR #30 và chuẩn bị chuyển quyền stock
 
-- Phúc báo Quân đã chốt D01–D14. Review Approved của Quân trên PR #30 để trống phần nội dung, Issue #20 chưa có bình luận ghi quyết định. Cần bản xác nhận từng mục để cập nhật contract và đối chiếu SQL. Bảng trên ghi các giả định của bản triển khai hiện tại. [Review của Quân](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/30#pullrequestreview-6011627664)
+- Phúc xác nhận Quân đã chốt D01–D14 qua tin nhắn riêng. Bảng trên ghi phương án SQL hiện tại, chờ đối chiếu từng mục khi có nguyên văn. Các kiểm tra kỹ thuật tiếp tục dựa trên SQL hiện tại.
 - Migration `20261122000300_product_images_storage.sql` của PR #29 tại `42d1aa5` đã áp dụng sau tám migration của nhánh Orders trên PostgreSQL local. SQL policy cho phép admin thêm ảnh và anon đọc, đồng thời chặn customer thêm ảnh trên schema Storage mô phỏng. Migration nâng giới hạn từ 2 lên 5 MiB, thay ba policy ghi và để lại cả `product_images_read` lẫn `product_images_public_read`. Hải cần chốt giới hạn và gộp policy đọc trước khi tích hợp. Kiểm thử upload qua Storage API vẫn cần Supabase local. [Review PR #29](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/29#pullrequestreview-6011723835)
 - Sau khi Hải chuyển các đường UPDATE của client sang payload metadata và RPC stock, xác nhận client cũ đã ngừng ghi stock trực tiếp. Trong migration phối hợp, thu hồi UPDATE cấp bảng và cấp UPDATE cho `product_id`, `sku`, `size`, `color`; rà quyền kế thừa trước khi phát hành. [Bài diễn tập SQL](../../supabase/tests/orders_stock_cutover.sql) áp dụng thay đổi bên trong transaction rồi rollback. Đã xác minh admin vẫn sửa metadata, tạo variant với tồn ban đầu và chỉnh tồn qua RPC; UPDATE trực tiếp stock/revision bị từ chối, khách không sửa được metadata hoặc gọi RPC stock, checkout và hủy vẫn trừ/hoàn đúng. Migration vận hành sẽ đi sau bản client của Hải.
 - Với Supabase local dùng riêng, khởi động stack và reset database để nạp migrations/seed. Tạo tài khoản A/B/admin qua Auth, cấp quyền admin trên `public.user_roles` ở local rồi lấy access token của cả ba. Chạy `orders.sql`, `orders_stock_cutover.sql` bằng psql và chạy `orders_rest.py` với các biến môi trường ở trên. Bài REST còn kiểm tra ghi thẳng trạng thái bị chặn kể cả với admin, dùng lại request ID với payload khác, và form stock cũ xung đột sau checkout. Lượt kiểm tra hiện tại thiếu Docker, Supabase CLI và psql nên REST/JWT thật ở trạng thái **Not Run**.

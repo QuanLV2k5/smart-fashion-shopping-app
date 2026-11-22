@@ -1,0 +1,44 @@
+name: Orders local integration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/orders-local.yml'
+      - 'supabase/config.toml'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  orders-supabase-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Start disposable Supabase
+        run: |
+          set -euo pipefail
+          project="$RUNNER_TEMP/orders-local"
+          mkdir "$project"
+          cd "$project"
+          npx --yes supabase@2.75.0 init
+          cp -R "$GITHUB_WORKSPACE/supabase/migrations" supabase/
+          umask 077
+          npx --yes supabase@2.75.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/orders-supabase-start.log"
+          npx --yes supabase@2.75.0 status -o json > "$RUNNER_TEMP/orders-supabase.json"
+      - name: Test PostgreSQL and REST with local Auth JWTs
+        run: |
+          set -euo pipefail
+          status_json="$RUNNER_TEMP/orders-supabase.json"
+          db_url="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["DB_URL"])' "$status_json")"
+          for sql in foundation.sql cart.sql cart_verification.sql ai_rate_limit.sql orders_fixtures.sql orders.sql orders_stock_cutover.sql; do
+            printf 'Running %s\n' "$sql"
+            psql --dbname "$db_url" -X -v ON_ERROR_STOP=1 -f "supabase/tests/$sql"
+          done
+          python3 supabase/tests/orders_rest.py --bootstrap "$status_json"

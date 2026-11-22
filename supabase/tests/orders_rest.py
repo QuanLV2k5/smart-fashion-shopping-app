@@ -1,8 +1,10 @@
 """Orders REST/JWT and race integration test for a disposable Supabase local database."""
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from argparse import ArgumentParser
 import json
 import os
+from pathlib import Path
 import subprocess
 import time
 from urllib.error import HTTPError
@@ -174,4 +176,39 @@ class OrdersTest:
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("--bootstrap", type=Path, metavar="STATUS_JSON",
+                        help="create fresh test users using disposable Supabase CLI status JSON")
+    args = parser.parse_args()
+    if args.bootstrap:
+        settings = json.loads(args.bootstrap.read_text(encoding="utf-8"))
+        for name in ("API_URL", "DB_URL", "ANON_KEY"):
+            os.environ[f"ORDERS_TEST_{name}"] = settings[name]
+        api = require_local("ORDERS_TEST_API_URL", {"http", "https"}).rstrip("/")
+        dsn = require_local("ORDERS_TEST_DB_URL", {"postgres", "postgresql"})
+
+        def auth_post(route, key, body):
+            request = Request(f"{api}/auth/v1/{route}", data=json.dumps(body).encode(),
+                              headers={"apikey": key, "Authorization": f"Bearer {key}",
+                                       "Content-Type": "application/json"})
+            try:
+                with urlopen(request, timeout=15) as response:
+                    return json.load(response)
+            except HTTPError as error:
+                raise AssertionError(f"local Auth {route}: HTTP {error.code}") from None
+
+        for role in ("A", "B", "ADMIN"):
+            credentials = {"email": f"orders-{role.lower()}-{uuid4().hex}@example.com",
+                           "password": uuid4().hex}
+            user = auth_post("admin/users", settings["SERVICE_ROLE_KEY"], {**credentials, "email_confirm": True})
+            if role == "ADMIN":
+                user_id = str(UUID(user["id"]))
+                result = subprocess.run(
+                    ["psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "--dbname", dsn, "-c",
+                     f"update public.user_roles set role = 'admin' where user_id = '{user_id}' returning user_id"],
+                    capture_output=True, text=True, timeout=10,
+                )
+                expect(result.returncode == 0 and result.stdout.strip() == user_id, "could not assign local admin")
+            session = auth_post("token?grant_type=password", settings["ANON_KEY"], credentials)
+            os.environ[f"ORDERS_TEST_{role}_JWT"] = session["access_token"]
     OrdersTest().run()
