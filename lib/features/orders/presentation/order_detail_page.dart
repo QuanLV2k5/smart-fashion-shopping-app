@@ -186,10 +186,11 @@ class _DetailState extends ConsumerState<_Detail> {
     } catch (_) {
       if (_active) _message = 'Chưa xác nhận được kết quả cập nhật. Vui lòng thử lại yêu cầu này.';
     } finally {
-      if (_active)
+      if (_active) {
         setState(() {
           _busy = false;
         });
+      }
     }
   }
 

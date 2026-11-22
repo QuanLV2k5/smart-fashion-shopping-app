@@ -6,6 +6,8 @@ import '../../../core/storage/preferences_provider.dart';
 import '../../addresses/presentation/address_providers.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../cart/presentation/cart_providers.dart';
+import '../data/checkout_request_store_web.dart'
+    if (dart.library.io) '../data/checkout_request_store_io.dart';
 import '../data/supabase_checkout_repository.dart';
 import '../domain/checkout.dart';
 
@@ -14,7 +16,7 @@ final checkoutRepositoryProvider = Provider<CheckoutRepository>(
 );
 
 final checkoutRequestStoreProvider = Provider<CheckoutRequestStore>(
-  (ref) => PreferencesCheckoutRequestStore(ref.watch(preferencesProvider)),
+  (ref) => createCheckoutRequestStore(ref.watch(preferencesProvider)),
 );
 
 final checkoutProvider =
@@ -52,8 +54,9 @@ class CheckoutController extends AsyncNotifier<CheckoutState> {
   @override
   Future<CheckoutState> build() async {
     _generation++;
-    if (ref.watch(authenticatedUserIdProvider) != userId)
+    if (ref.watch(authenticatedUserIdProvider) != userId) {
       return const CheckoutState();
+    }
     final pending = await ref.watch(checkoutRequestStoreProvider).read(userId);
     return CheckoutState(
       pending: pending,
@@ -82,8 +85,9 @@ class CheckoutController extends AsyncNotifier<CheckoutState> {
     if (!_active(generation) ||
         _working ||
         current == null ||
-        current.pending != null)
+        current.pending != null) {
       return;
+    }
     final address = ref.read(addressBookProvider).asData?.value.selected;
     if (address == null || !_cartReady) {
       state = const AsyncData(
@@ -101,8 +105,9 @@ class CheckoutController extends AsyncNotifier<CheckoutState> {
           .quote(userId, address.id);
       if (_active(generation)) state = AsyncData(CheckoutState(quote: quote));
     } catch (error) {
-      if (_active(generation))
+      if (_active(generation)) {
         state = AsyncData(CheckoutState(message: _message(error)));
+      }
     } finally {
       _working = false;
     }
@@ -115,8 +120,9 @@ class CheckoutController extends AsyncNotifier<CheckoutState> {
     if (!_active(generation) ||
         _working ||
         current?.pending != null ||
-        quote == null)
+        quote == null) {
       return;
+    }
     if (!quote.expiresAt.isAfter(DateTime.now())) {
       state = AsyncData(
         CheckoutState(message: const OrdersFailure('SF_QUOTE_EXPIRED').message),
@@ -148,8 +154,9 @@ class CheckoutController extends AsyncNotifier<CheckoutState> {
         return;
       }
       await store.save(userId, request);
-      if (_active(generation))
+      if (_active(generation)) {
         await _submit(request, generation, recover: false);
+      }
     } catch (_) {
       if (_active(generation)) {
         state = AsyncData(
@@ -189,10 +196,11 @@ class CheckoutController extends AsyncNotifier<CheckoutState> {
       try {
         placed = await repository.lookup(userId, request);
       } catch (_) {
-        if (_active(generation))
+        if (_active(generation)) {
           state = AsyncData(
             CheckoutState(pending: request, message: _uncertain),
           );
+        }
         return;
       }
     }

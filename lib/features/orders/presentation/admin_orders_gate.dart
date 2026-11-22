@@ -17,8 +17,9 @@ class AdminOrdersGate extends ConsumerWidget {
     if (userId == null) return const SizedBox.shrink();
     final provider = adminOrderAccessProvider(userId);
     final access = ref.watch(provider);
-    if (access.asData?.value == true && !access.isLoading)
+    if (access.asData?.value == true && !access.isLoading) {
       return builder(userId);
+    }
     return ShopPageScaffold(
       title: 'Quản lý đơn hàng',
       onBack: () => context.canPop() ? context.pop() : context.go('/account'),

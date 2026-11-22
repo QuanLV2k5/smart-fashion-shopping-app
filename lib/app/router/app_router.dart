@@ -24,7 +24,7 @@ import '../../features/orders/presentation/order_detail_page.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
   // Phiên thay đổi thì chạy lại redirect, không tạo router mới/mất lịch sử.
-  ref.listen(authSessionProvider, (_, _) => refresh.value++);
+  ref.listen(authenticatedUserIdProvider, (_, _) => refresh.value++);
   final router = GoRouter(
     initialLocation: '/',
     refreshListenable: refresh,

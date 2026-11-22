@@ -44,8 +44,9 @@ class SupabaseOrdersRepository implements OrdersRepository {
     final detail = OrderDetail.fromJson(
       await ordersRpc(client, userId, 'get_order', {'p_order_id': orderId}),
     );
-    if (detail.id != orderId)
+    if (detail.id != orderId) {
       throw const FormatException('Unexpected order ID');
+    }
     return detail;
   }
 

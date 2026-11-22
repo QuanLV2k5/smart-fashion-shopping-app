@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/checkout.dart';
@@ -15,8 +12,9 @@ class SupabaseCheckoutRepository implements CheckoutRepository {
       'p_address_id': addressId,
     });
     final quote = CheckoutQuote.fromJson(response);
-    if (quote.addressId != addressId)
+    if (quote.addressId != addressId) {
       throw const FormatException('Unexpected quote address');
+    }
     return quote;
   }
 
@@ -44,8 +42,9 @@ class SupabaseCheckoutRepository implements CheckoutRepository {
 
   PlacedOrder _placed(OrderJson response, CheckoutRequest request) {
     final placed = PlacedOrder.fromJson(orderObject(response['result']));
-    if (placed.requestId != request.requestId)
+    if (placed.requestId != request.requestId) {
       throw const FormatException('Unexpected Orders receipt');
+    }
     return placed;
   }
 }
@@ -77,32 +76,4 @@ Future<OrderJson> ordersRpc(
     }
     rethrow;
   }
-}
-
-class PreferencesCheckoutRequestStore implements CheckoutRequestStore {
-  const PreferencesCheckoutRequestStore(this.preferences);
-  final SharedPreferencesAsync preferences;
-
-  String _key(String userId) => 'orders.pending.checkout.v1.$userId';
-
-  @override
-  Future<CheckoutRequest?> read(String userId) async {
-    final value = await preferences.getString(_key(userId));
-    return value == null
-        ? null
-        : CheckoutRequest.fromJson(orderObject(jsonDecode(value)));
-  }
-
-  @override
-  Future<void> save(String userId, CheckoutRequest request) async {
-    final key = _key(userId);
-    final payload = jsonEncode(request.toJson());
-    await preferences.setString(key, payload);
-    if (await preferences.getString(key) != payload) {
-      throw StateError('Pending checkout was not stored');
-    }
-  }
-
-  @override
-  Future<void> clear(String userId) => preferences.remove(_key(userId));
 }

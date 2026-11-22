@@ -113,7 +113,8 @@ class _OrdersListState extends ConsumerState<_OrdersList> {
         onRefresh: () async {
           setState(_resetPages);
           try {
-            await ref.refresh(provider.future);
+            ref.invalidate(provider);
+            await ref.read(provider.future);
           } catch (_) {
             /* Rendered below. */
           }
