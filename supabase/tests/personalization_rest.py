@@ -40,8 +40,10 @@ def run(status):
                 actual, result = response.status, response.read()
         except HTTPError as failure:
             actual, result = failure.code, failure.read()
-        expect(actual == code, f"{path.split('?')[0]}: expected {code}, got {actual}")
         decoded = json.loads(result) if result else None
+        allowed = code if isinstance(code, tuple) else (code,)
+        error_code = decoded.get("code", decoded.get("error", "")) if isinstance(decoded, dict) else ""
+        expect(actual in allowed, f"{path.split('?')[0]}: expected {allowed}, got {actual} ({error_code})")
         if error:
             expect(decoded.get("message") == error, f"{path}: unexpected error code")
         return decoded
@@ -70,7 +72,7 @@ def run(status):
 
     expect(not rpc("get_my_access", a)["is_admin"], "metadata must not grant admin")
     rpc("list_app_users", a, code=403, error="SF_FORBIDDEN")
-    http("rest/v1/user_roles", a, {"role": "admin"}, "PATCH", code=403)
+    http(f"rest/v1/user_roles?user_id=eq.{a_id}", a, {"role": "admin"}, "PATCH", code=403)
     product = http("rest/v1/products?select=id,product_variants(id)&code=eq.SF01", a)[0]
     pid, variant = product["id"], product["product_variants"][0]["id"]
     sql(f"update public.product_variants set stock=10 where id='{variant}'")
@@ -113,7 +115,11 @@ def run(status):
     for name in ("get_cart", "get_favorites", "consume_ai_request", "list_my_orders", "get_my_access"):
         rpc(name, a, code=403, error="SF_ACCESS_BLOCKED")
     http("rest/v1/products?select=id", a, code=403, error="SF_ACCESS_BLOCKED")
-    http(f"storage/v1/object/avatars/{a_id}/q06-blocked.png", a, raw=png, code=403)
+    denied = http(f"storage/v1/object/avatars/{a_id}/q06-blocked.png", a, raw=png, code=(400, 403))
+    expect(str(denied.get("statusCode")) == "403" or denied.get("error") in {"Unauthorized", "AccessDenied"},
+           "Storage must reject with a permission error")
+    expect(sql(f"select count(*) from storage.objects where bucket_id='avatars' and name='{a_id}/q06-blocked.png'") == "0",
+           "blocked upload must not create an object")
     expect(rpc("get_product_reviews", data={"p_product_id": pid})["count"] == 1, "blocking preserves public review history")
     rpc("set_user_access", admin, {"p_user_id": a_id, "p_blocked": False, "p_expected_version": 1})
     expect(len(rpc("get_favorites", a)["items"]) == 1, "unblock preserves favorites")
