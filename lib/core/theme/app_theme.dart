@@ -4,6 +4,7 @@ import 'app_tokens.dart';
 
 abstract final class AppTheme {
   static const _label = TextStyle(
+    fontFamily: 'BeVietnamPro',
     letterSpacing: 0,
     fontSize: 14,
     height: 22 / 14,

@@ -51,6 +51,11 @@ class HomePage extends StatelessWidget {
                 onPressed: () => context.go('/explore'),
                 child: const Text('Khám phá bộ sưu tập'),
               ),
+              OutlinedButton.icon(
+                onPressed: () => context.push('/ai'),
+                icon: const Icon(Icons.auto_awesome_outlined),
+                label: const Text('Phối đồ AI'),
+              ),
               CategoryStrip(
                 categories: catalog.categories,
                 selectedId: null,

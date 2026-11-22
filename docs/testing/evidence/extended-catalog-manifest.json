@@ -1,0 +1,218 @@
+[
+  {
+    "code": "SF13",
+    "name": "Áo thun Core Đen",
+    "category": 1,
+    "price": 99000,
+    "color": "Đen",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF13.jpg"
+  },
+  {
+    "code": "SF14",
+    "name": "Áo thun Oversize Ivory",
+    "category": 1,
+    "price": 149000,
+    "color": "Trắng ngà",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF14.jpg"
+  },
+  {
+    "code": "SF15",
+    "name": "Polo Navy Classic",
+    "category": 1,
+    "price": 179000,
+    "color": "Navy",
+    "audience": "Nam",
+    "imagePath": "demo-20261121/SF15.jpg"
+  },
+  {
+    "code": "SF16",
+    "name": "Áo blouse Rose",
+    "category": 1,
+    "price": 189000,
+    "color": "Hồng nhạt",
+    "audience": "Nữ",
+    "imagePath": "demo-20261121/SF16.jpg"
+  },
+  {
+    "code": "SF17",
+    "name": "Sơ mi Stripe Blue",
+    "category": 1,
+    "price": 249000,
+    "color": "Xanh sọc trắng",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF17.jpg"
+  },
+  {
+    "code": "SF18",
+    "name": "Áo khoác gió Sage",
+    "category": 4,
+    "price": 299000,
+    "color": "Xanh sage",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF18.jpg"
+  },
+  {
+    "code": "SF19",
+    "name": "Jeans Light Straight",
+    "category": 2,
+    "price": 199000,
+    "color": "Xanh nhạt",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF19.jpg"
+  },
+  {
+    "code": "SF20",
+    "name": "Quần Cargo Urban",
+    "category": 2,
+    "price": 269000,
+    "color": "Đen",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF20.jpg"
+  },
+  {
+    "code": "SF21",
+    "name": "Quần Chinos Sand",
+    "category": 2,
+    "price": 219000,
+    "color": "Be",
+    "audience": "Nam",
+    "imagePath": "demo-20261121/SF21.jpg"
+  },
+  {
+    "code": "SF22",
+    "name": "Quần Wide-leg Charcoal",
+    "category": 2,
+    "price": 279000,
+    "color": "Xám đậm",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF22.jpg"
+  },
+  {
+    "code": "SF23",
+    "name": "Shorts Weekend Sand",
+    "category": 2,
+    "price": 129000,
+    "color": "Be",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF23.jpg"
+  },
+  {
+    "code": "SF24",
+    "name": "Jogger Active Navy",
+    "category": 2,
+    "price": 159000,
+    "color": "Navy",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF24.jpg"
+  },
+  {
+    "code": "SF25",
+    "name": "Giày Canvas White",
+    "category": 5,
+    "price": 189000,
+    "color": "Trắng",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF25.jpg"
+  },
+  {
+    "code": "SF26",
+    "name": "Giày Running Black",
+    "category": 5,
+    "price": 299000,
+    "color": "Đen",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF26.jpg"
+  },
+  {
+    "code": "SF27",
+    "name": "Giày Loafer Brown",
+    "category": 5,
+    "price": 399000,
+    "color": "Nâu",
+    "audience": "Nam",
+    "imagePath": "demo-20261121/SF27.jpg"
+  },
+  {
+    "code": "SF28",
+    "name": "Dép Sandal Sand",
+    "category": 5,
+    "price": 149000,
+    "color": "Be",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF28.jpg"
+  },
+  {
+    "code": "SF29",
+    "name": "Dép Slide Black",
+    "category": 5,
+    "price": 89000,
+    "color": "Đen",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF29.jpg"
+  },
+  {
+    "code": "SF30",
+    "name": "Giày Espadrille Navy",
+    "category": 5,
+    "price": 229000,
+    "color": "Navy",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF30.jpg"
+  },
+  {
+    "code": "SF31",
+    "name": "Mũ lưỡi trai Core Black",
+    "category": 5,
+    "price": 79000,
+    "color": "Đen",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF31.jpg"
+  },
+  {
+    "code": "SF32",
+    "name": "Mũ Bucket Sand",
+    "category": 5,
+    "price": 99000,
+    "color": "Be",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF32.jpg"
+  },
+  {
+    "code": "SF33",
+    "name": "Mũ lưỡi trai Navy",
+    "category": 5,
+    "price": 89000,
+    "color": "Navy",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF33.jpg"
+  },
+  {
+    "code": "SF34",
+    "name": "Mũ cói Summer",
+    "category": 5,
+    "price": 119000,
+    "color": "Be nhạt",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF34.jpg"
+  },
+  {
+    "code": "SF35",
+    "name": "Áo khoác Cardigan Rust",
+    "category": 4,
+    "price": 259000,
+    "color": "Cam đất",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF35.jpg"
+  },
+  {
+    "code": "SF36",
+    "name": "Áo khoác Denim Indigo",
+    "category": 4,
+    "price": 349000,
+    "color": "Xanh indigo",
+    "audience": "Unisex",
+    "imagePath": "demo-20261121/SF36.jpg"
+  }
+]

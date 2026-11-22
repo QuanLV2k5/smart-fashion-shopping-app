@@ -26,7 +26,7 @@ class AccountPage extends ConsumerWidget {
     if (user == null) {
       return StoreScaffold(
         title: 'Tài khoản',
-        selectedIndex: 2,
+        selectedIndex: 3,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
@@ -76,7 +76,7 @@ class AccountPage extends ConsumerWidget {
 
     return StoreScaffold(
       title: 'Tài khoản',
-      selectedIndex: 2,
+      selectedIndex: 3,
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
