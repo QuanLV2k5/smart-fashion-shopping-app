@@ -16,6 +16,7 @@ import 'catalog_providers.dart';
 import 'widgets/catalog_widgets.dart';
 import 'widgets/product_gallery.dart';
 import 'widgets/product_size_guide.dart';
+import '../../personalization/presentation/favorite_button.dart';
 
 class ProductPage extends ConsumerStatefulWidget {
   const ProductPage({
@@ -238,9 +239,16 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                 style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: AppColors.muted),
               ),
-              Text(
-                product.name,
-                style: Theme.of(context).textTheme.headlineSmall,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      product.name,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  FavoriteButton(productId: product.id),
+                ],
               ),
               Text(
                 formatVnd(product.priceVnd),
@@ -371,6 +379,12 @@ class _ProductPageState extends ConsumerState<ProductPage> {
                     ),
                   ],
                 ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () =>
+                    context.push('/products/${product.id}/reviews'),
+                icon: const Icon(Icons.star_outline_rounded),
+                label: const Text('Đánh giá từ người mua'),
               ),
             ],
           ),

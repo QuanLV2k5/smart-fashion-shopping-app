@@ -21,6 +21,16 @@ test('invalid JWT is rejected before catalog or Gemini',async()=>{
  await mock(async url=>{calls++;assert.match(url,/auth\/v1\/user$/);return json({},401);},async()=>assert.equal((await handler(request(input))).status,401));
  assert.equal(calls,1);
 });
+test('blocked accounts stop before catalog, images and Gemini',async()=>{
+ let calls=0;
+ await mock(async url=>{
+  calls++;
+  if(url.endsWith('/user')) return json({id:'blocked'});
+  assert.ok(url.endsWith('/rpc/consume_ai_request'));
+  return json({message:'SF_ACCESS_BLOCKED'},403);
+ },async()=>{const res=await handler(request(input));assert.equal(res.status,403);assert.deepEqual(await res.json(),{code:'ACCOUNT_BLOCKED'});});
+ assert.equal(calls,2);
+});
 test('input and per-user quota stop work before Gemini',async()=>{
  let calls=[];
  await mock(async url=>{calls.push(url);return url.endsWith('/user')?json({id:'a'}):json(false);},async()=>{

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
+import '../features/personalization/presentation/account_access_gate.dart';
 import 'router/app_router.dart';
 
 class SmartFashionApp extends ConsumerWidget {
@@ -20,6 +21,8 @@ class SmartFashionApp extends ConsumerWidget {
       supportedLocales: const [Locale('vi', 'VN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: ref.watch(appRouterProvider),
+      builder: (context, child) =>
+          AccountAccessGate(child: child ?? const SizedBox.shrink()),
     );
   }
 }

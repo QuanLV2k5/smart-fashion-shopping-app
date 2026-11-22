@@ -234,6 +234,7 @@ void main() {
     await tester.tap(button('Đăng nhập'));
     await tester.pumpAndSettle();
     expect(find.text('Xin chào, Người kiểm thử'), findsOneWidget);
+    await tester.ensureVisible(button('Đăng xuất'));
     await tester.tap(button('Đăng xuất'));
     await tester.pumpAndSettle();
     await tester.tap(button('Đăng xuất'));

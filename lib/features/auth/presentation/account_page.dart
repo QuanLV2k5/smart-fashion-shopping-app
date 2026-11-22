@@ -9,6 +9,7 @@ import '../../profile/presentation/widgets/avatar_selector_sheet.dart';
 import 'auth_controller.dart';
 import 'auth_providers.dart';
 import 'widgets/auth_widgets.dart';
+import '../../personalization/presentation/personalization_providers.dart';
 
 /// Màn hình Tài khoản (Figma Account 4:265 & GuestAccount 4:304).
 /// Hiển thị thông tin hồ sơ người dùng, lối vào chỉnh sửa hồ sơ và đăng xuất.
@@ -17,15 +18,16 @@ class AccountPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user =
-        ref.watch(authSessionProvider).value ??
-        ref.read(authRepositoryProvider).currentUser;
+    final session = ref.watch(authSessionProvider);
+    final user = session.hasValue
+        ? session.value
+        : ref.watch(authRepositoryProvider).currentUser;
 
     // Trường hợp tài khoản khách (chưa đăng nhập - Figma GuestAccount 4:304)
     if (user == null) {
       return StoreScaffold(
         title: 'Tài khoản',
-        selectedIndex: 3,
+        selectedIndex: 4,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
@@ -74,7 +76,7 @@ class AccountPage extends ConsumerWidget {
 
     return StoreScaffold(
       title: 'Tài khoản',
-      selectedIndex: 3,
+      selectedIndex: 4,
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -197,6 +199,25 @@ class AccountPage extends ConsumerWidget {
                       );
                     },
                   ),
+                  const Divider(height: 1, color: AppColors.outline),
+                  _AccountMenuItem(
+                    icon: Icons.favorite_border_rounded,
+                    title: 'Sản phẩm yêu thích',
+                    subtitle: 'Những món bạn đã lưu',
+                    onTap: () => context.push('/favorites'),
+                  ),
+                  if (ref.watch(accountAccessProvider).value?.userId ==
+                          user.id &&
+                      ref.watch(accountAccessProvider).value?.admin ==
+                          true) ...[
+                    const Divider(height: 1, color: AppColors.outline),
+                    _AccountMenuItem(
+                      icon: Icons.manage_accounts_outlined,
+                      title: 'Quản lý người dùng',
+                      subtitle: 'Hồ sơ và trạng thái truy cập',
+                      onTap: () => context.push('/admin/users'),
+                    ),
+                  ],
                 ],
               ),
             ),
