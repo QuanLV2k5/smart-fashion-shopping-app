@@ -14,10 +14,10 @@ Bài test tạo A, B và admin bằng Auth của instance tạm, chỉnh tồn v
 
 ## Kiểm tra trên thiết bị hoặc trình duyệt
 
-Tạo hai customer và một admin trong instance thử. Dùng khóa client của instance và chỉ định cả URL lẫn khóa để tránh cấu hình mặc định trỏ tới backend dev của repo. Ví dụ Chrome:
+Tạo hai customer và một admin trong instance thử. Gán khóa client của instance vào biến shell `LOCAL_SUPABASE_CLIENT_KEY`. Chỉ định cả URL lẫn khóa để tránh cấu hình mặc định trỏ tới backend dev của repo. Ví dụ Chrome:
 
 ```shell
-flutter run -d chrome --dart-define=APP_ENV=development --dart-define=USE_SUPABASE=true --dart-define=SUPABASE_URL=http://127.0.0.1:54321 --dart-define=SUPABASE_PUBLISHABLE_KEY=<local-client-key>
+flutter run -d chrome --dart-define=APP_ENV=development --dart-define=USE_SUPABASE=true --dart-define=SUPABASE_URL=http://127.0.0.1:54321 "--dart-define=SUPABASE_PUBLISHABLE_KEY=$LOCAL_SUPABASE_CLIENT_KEY"
 ```
 
 Android emulator dùng `10.0.2.2` để truy cập cổng host. Với mỗi ca, ghi commit, thiết bị/trình duyệt, bước tái hiện, số đơn và stock/revision trước/sau.

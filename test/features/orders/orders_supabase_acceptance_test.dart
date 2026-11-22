@@ -22,11 +22,14 @@ import '../addresses/address_fixtures.dart' show MemorySelection;
 class _DropCheckoutReply extends http.BaseClient {
   final _inner = http.Client();
   bool enabled = false;
+  int checkoutCalls = 0;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final response = await _inner.send(request);
-    if (enabled && request.url.path == '/rest/v1/rpc/place_cod_order') {
+    final isCheckout = request.url.path == '/rest/v1/rpc/place_cod_order';
+    if (isCheckout) checkoutCalls++;
+    if (enabled && isCheckout) {
       enabled = false;
       await response.stream.drain<void>();
       if (response.statusCode != 200) {
@@ -271,7 +274,10 @@ void main() {
         contains('hết hạn'),
       );
 
+      // The widget disables the quote CTA while the rejected checkout reloads Cart.
+      await container.read(cartProvider(a.id).future);
       await controller.loadQuote();
+      expect(container.read(checkout).requireValue.quote, isNotNull);
       await setStock(0);
       await controller.place();
       expect(
@@ -287,7 +293,9 @@ void main() {
       expect(quote.totals.shipping, 25000);
       expect(quote.totals.total, 224000);
       transport.enabled = true;
-      await controller.place();
+      final before = transport.checkoutCalls;
+      await Future.wait([controller.place(), controller.place()]);
+      expect(transport.checkoutCalls, before + 1);
       final saved = container.read(checkout).requireValue.pending!;
       expect(container.read(checkout).requireValue.placed, isNull);
       expect((await inventory())['stock'], 0);
