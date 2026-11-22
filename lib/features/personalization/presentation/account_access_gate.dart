@@ -11,8 +11,15 @@ import 'personalization_providers.dart';
 
 /// UI feedback complements the database guard; it is never the access control.
 class AccountAccessGate extends ConsumerStatefulWidget {
-  const AccountAccessGate({required this.child, super.key});
+  const AccountAccessGate({
+    required this.child,
+    this.publicCatalog = false,
+    this.onBrowseCatalog,
+    super.key,
+  });
   final Widget child;
+  final bool publicCatalog;
+  final VoidCallback? onBrowseCatalog;
   @override
   ConsumerState<AccountAccessGate> createState() => _AccountAccessGateState();
 }
@@ -67,6 +74,9 @@ class _AccountAccessGateState extends ConsumerState<AccountAccessGate>
     }
     final blocked =
         access.value?.userId == userId && access.value?.blocked == true;
+    // Public catalog is also accessible to guests. Losing connectivity must not
+    // hide its offline snapshot; private routes still require a verified account.
+    if (widget.publicCatalog && !blocked) return widget.child;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -111,6 +121,13 @@ class _AccountAccessGateState extends ConsumerState<AccountAccessGate>
                     OutlinedButton(
                       onPressed: () => ref.invalidate(accountAccessProvider),
                       child: const Text('Kiểm tra lại'),
+                    ),
+                  if (!blocked &&
+                      !access.isLoading &&
+                      widget.onBrowseCatalog != null)
+                    OutlinedButton(
+                      onPressed: widget.onBrowseCatalog,
+                      child: const Text('Xem cửa hàng'),
                     ),
                   OutlinedButton(
                     onPressed: signingOut

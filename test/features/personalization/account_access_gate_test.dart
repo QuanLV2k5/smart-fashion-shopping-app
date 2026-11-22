@@ -16,6 +16,38 @@ import 'personalization_test.dart' show accountA, accountB;
 class ConfiguredBackend extends Fake implements SupabaseClient {}
 
 void main() {
+  testWidgets(
+    'public catalog can remain visible when account refresh is offline',
+    (tester) async {
+      final auth = FakeAuthRepository()..session = accountA;
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          supabaseClientProvider.overrideWithValue(ConfiguredBackend()),
+          accountAccessProvider.overrideWith(
+            (ref) async =>
+                throw const PersonalizationFailure('SF_REQUEST_FAILED'),
+          ),
+        ],
+      );
+      addTearDown(auth.close);
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: AccountAccessGate(
+              publicCatalog: true,
+              child: Text('PUBLIC CATALOG'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('PUBLIC CATALOG'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
   testWidgets('access from A cannot authorize B while B status is loading', (
     tester,
   ) async {

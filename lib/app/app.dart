@@ -11,6 +11,7 @@ class SmartFashionApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
     // Đây là vỏ chung của app: tên, theme, tiếng Việt và điều hướng.
     return MaterialApp.router(
       title: 'Smart Fashion',
@@ -20,9 +21,22 @@ class SmartFashionApp extends ConsumerWidget {
       locale: const Locale('vi', 'VN'),
       supportedLocales: const [Locale('vi', 'VN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      routerConfig: ref.watch(appRouterProvider),
-      builder: (context, child) =>
-          AccountAccessGate(child: child ?? const SizedBox.shrink()),
+      routerConfig: router,
+      builder: (context, child) => ListenableBuilder(
+        listenable: router.routeInformationProvider,
+        builder: (context, _) {
+          final path = router.routeInformationProvider.value.uri.path;
+          final publicCatalog =
+              path == '/' ||
+              path == '/explore' ||
+              RegExp(r'^/products/[^/]+(?:/reviews)?$').hasMatch(path);
+          return AccountAccessGate(
+            publicCatalog: publicCatalog,
+            onBrowseCatalog: () => router.go('/'),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+      ),
     );
   }
 }
