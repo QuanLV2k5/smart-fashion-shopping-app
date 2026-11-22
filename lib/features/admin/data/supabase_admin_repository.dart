@@ -324,15 +324,20 @@ class SupabaseAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
+    bool updateStock = true,
   }) async {
     final backend = _requireClient();
-    final data = {
+    final data = <String, dynamic>{
       'product_id': productId,
       'sku': sku.trim(),
       'size': size.trim(),
       'color': color.trim(),
-      'stock': stock,
     };
+
+    // Khi sửa biến thể hiện có, chỉ cập nhật stock nếu có yêu cầu để tránh xung đột đơn hàng
+    if (id == null || id.isEmpty || updateStock) {
+      data['stock'] = stock;
+    }
 
     try {
       if (id != null && id.isNotEmpty) {
@@ -367,18 +372,21 @@ class SupabaseAdminRepository implements AdminRepository {
 
   @override
   Future<void> deleteVariant(String variantId) async {
+    // Không DELETE cứng vì schema không cấp quyền DELETE trên product_variants
+    // và để bảo toàn tính toàn vẹn dữ liệu đơn hàng (Foreign Key).
+    // Thay vào đó cập nhật tồn kho về 0 (ngừng bán).
     final backend = _requireClient();
     try {
       await backend
           .from('product_variants')
-          .delete()
+          .update({'stock': 0})
           .eq('id', variantId)
           .timeout(const Duration(seconds: 25));
     } on PostgrestException catch (e) {
-      throw AdminFailure('Lỗi xóa biến thể: ${e.message}');
+      throw AdminFailure('Lỗi cập nhật ngừng bán biến thể: ${e.message}');
     } catch (e) {
       if (e is AdminFailure) rethrow;
-      throw AdminFailure('Không thể xóa biến thể: $e');
+      throw AdminFailure('Không thể cập nhật ngừng bán biến thể: $e');
     }
   }
 

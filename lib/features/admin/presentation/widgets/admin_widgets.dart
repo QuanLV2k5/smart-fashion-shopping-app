@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_tokens.dart';
+import '../admin_providers.dart';
 
 /// Thẻ thống kê hoặc mục điều hướng chính trên Admin Dashboard.
 class AdminMenuCard extends StatelessWidget {
@@ -183,5 +186,63 @@ class AdminAccessDeniedView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Widget bọc bảo vệ tất cả route con của Admin (/admin/**).
+/// Nếu không phải Admin, lập tức hiển thị AdminAccessDeniedView.
+class AdminGuard extends ConsumerWidget {
+  const AdminGuard({
+    super.key,
+    required this.child,
+    this.title = 'Quản trị Smart Fashion',
+  });
+
+  final Widget child;
+  final String title;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAdmin = ref.watch(isCurrentUserAdminProvider);
+    final roleAsync = ref.watch(currentUserRoleProvider);
+
+    if (roleAsync.isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.ivory,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    if (!isAdmin) {
+      return Scaffold(
+        backgroundColor: AppColors.ivory,
+        appBar: AppBar(
+          title: const Text(
+            'Quản trị Smart Fashion',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.ink,
+            ),
+          ),
+          backgroundColor: AppColors.ivory,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                context.go('/account');
+              }
+            },
+          ),
+        ),
+        body: const AdminAccessDeniedView(),
+      );
+    }
+
+    return child;
   }
 }

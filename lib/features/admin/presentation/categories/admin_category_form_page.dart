@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/admin_models.dart';
 import '../admin_providers.dart';
+import '../widgets/admin_widgets.dart';
 
 class AdminCategoryFormPage extends ConsumerStatefulWidget {
   const AdminCategoryFormPage({
@@ -110,189 +111,192 @@ class _AdminCategoryFormPageState extends ConsumerState<AdminCategoryFormPage> {
     final state = ref.watch(adminCategoryControllerProvider);
     final isLoading = state.isLoading;
 
-    return Scaffold(
-      backgroundColor: AppColors.ivory,
-      appBar: AppBar(
-        title: Text(
-          isEditing ? 'Chỉnh sửa Danh mục' : 'Thêm Danh mục mới',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
+    return AdminGuard(
+      title: isEditing ? 'Chỉnh sửa Danh mục' : 'Thêm Danh mục mới',
+      child: Scaffold(
+        backgroundColor: AppColors.ivory,
+        appBar: AppBar(
+          title: Text(
+            isEditing ? 'Chỉnh sửa Danh mục' : 'Thêm Danh mục mới',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.ink,
+            ),
+          ),
+          backgroundColor: AppColors.ivory,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
+            onPressed: () => context.pop(),
           ),
         ),
-        backgroundColor: AppColors.ivory,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (state.hasError) ...[
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.medium),
-                    border: Border.all(color: AppColors.accent),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline_rounded,
-                        color: AppColors.accent,
-                        size: 20,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          state.error.toString(),
-                          style: const TextStyle(
-                            color: AppColors.accent,
-                            fontSize: 13,
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.hasError) ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.medium),
+                      border: Border.all(color: AppColors.accent),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: AppColors.accent,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            state.error.toString(),
+                            style: const TextStyle(
+                              color: AppColors.accent,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-
-              // Tên danh mục
-              Text(
-                'Tên danh mục *',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: 'Ví dụ: Áo Sơ Mi, Quần Jeans, Váy...',
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.medium),
-                    borderSide: const BorderSide(color: AppColors.outline),
-                  ),
-                ),
-                validator: AdminValidation.validateCategoryName,
-                onChanged: _onNameChanged,
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              // Slug danh mục
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Đường dẫn tĩnh (Slug) *',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
+                      ],
                     ),
                   ),
-                  if (!isEditing)
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _autoSlug = !_autoSlug;
-                          if (_autoSlug) {
-                            _slugController.text = _toSlug(
-                              _nameController.text,
-                            );
-                          }
-                        });
-                      },
-                      child: Text(
-                        _autoSlug ? 'Tự tạo từ tên' : 'Nhập thủ công',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
+                  const SizedBox(height: AppSpacing.md),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              TextFormField(
-                controller: _slugController,
-                decoration: InputDecoration(
-                  hintText: 'vi-du-ao-so-mi',
-                  filled: true,
-                  fillColor: AppColors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.medium),
-                    borderSide: const BorderSide(color: AppColors.outline),
+
+                // Tên danh mục
+                Text(
+                  'Tên danh mục *',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
                   ),
                 ),
-                validator: AdminValidation.validateCategorySlug,
-                onChanged: (_) => _autoSlug = false,
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              // Switch kích hoạt
-              Material(
-                color: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.medium),
-                  side: const BorderSide(color: AppColors.outline),
-                ),
-                child: SwitchListTile(
-                  value: _isActive,
-                  activeTrackColor: AppColors.primary,
-                  title: const Text(
-                    'Kích hoạt hiển thị',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
+                const SizedBox(height: AppSpacing.xs),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    hintText: 'Ví dụ: Áo Sơ Mi, Quần Jeans, Váy...',
+                    filled: true,
+                    fillColor: AppColors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.medium),
+                      borderSide: const BorderSide(color: AppColors.outline),
                     ),
                   ),
-                  subtitle: const Text(
-                    'Hiển thị danh mục này cho khách hàng trên Trang chủ và Khám phá.',
-                    style: TextStyle(fontSize: 12, color: AppColors.muted),
-                  ),
-                  onChanged: (val) => setState(() => _isActive = val),
+                  validator: AdminValidation.validateCategoryName,
+                  onChanged: _onNameChanged,
                 ),
-              ),
 
-              const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.md),
 
-              FilledButton(
-                onPressed: isLoading ? null : _submit,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  minimumSize: const Size(double.infinity, 50),
+                // Slug danh mục
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Đường dẫn tĩnh (Slug) *',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    if (!isEditing)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _autoSlug = !_autoSlug;
+                            if (_autoSlug) {
+                              _slugController.text = _toSlug(
+                                _nameController.text,
+                              );
+                            }
+                          });
+                        },
+                        child: Text(
+                          _autoSlug ? 'Tự tạo từ tên' : 'Nhập thủ công',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                TextFormField(
+                  controller: _slugController,
+                  decoration: InputDecoration(
+                    hintText: 'vi-du-ao-so-mi',
+                    filled: true,
+                    fillColor: AppColors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.medium),
+                      borderSide: const BorderSide(color: AppColors.outline),
+                    ),
+                  ),
+                  validator: AdminValidation.validateCategorySlug,
+                  onChanged: (_) => _autoSlug = false,
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Switch kích hoạt
+                Material(
+                  color: AppColors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.medium),
+                    side: const BorderSide(color: AppColors.outline),
+                  ),
+                  child: SwitchListTile(
+                    value: _isActive,
+                    activeTrackColor: AppColors.primary,
+                    title: const Text(
+                      'Kích hoạt hiển thị',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Hiển thị danh mục này cho khách hàng trên Trang chủ và Khám phá.',
+                      style: TextStyle(fontSize: 12, color: AppColors.muted),
+                    ),
+                    onChanged: (val) => setState(() => _isActive = val),
                   ),
                 ),
-                child: isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.white,
+
+                const SizedBox(height: AppSpacing.xl),
+
+                FilledButton(
+                  onPressed: isLoading ? null : _submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.medium),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.white,
+                          ),
+                        )
+                      : Text(
+                          isEditing ? 'Lưu thay đổi' : 'Tạo danh mục',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      )
-                    : Text(
-                        isEditing ? 'Lưu thay đổi' : 'Tạo danh mục',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

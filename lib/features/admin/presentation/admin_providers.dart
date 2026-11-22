@@ -207,6 +207,7 @@ class AdminProductController extends AsyncNotifier<void> {
     required String size,
     required String color,
     required int stock,
+    bool updateStock = true,
   }) async {
     state = const AsyncLoading();
     try {
@@ -218,6 +219,7 @@ class AdminProductController extends AsyncNotifier<void> {
         size: size,
         color: color,
         stock: stock,
+        updateStock: updateStock,
       );
       state = const AsyncData(null);
       ref.invalidate(adminProductsProvider);

@@ -38,6 +38,7 @@ abstract interface class AdminRepository {
   Future<void> toggleProductVisibility(String id, bool isVisible);
 
   /// Thêm hoặc cập nhật biến thể (size, color, stock, sku).
+  /// [updateStock] = false khi chỉ sửa metadata để tránh xung đột tồn kho với đơn hàng.
   Future<void> saveVariant({
     String? id,
     required String productId,
@@ -45,9 +46,10 @@ abstract interface class AdminRepository {
     required String size,
     required String color,
     required int stock,
+    bool updateStock = true,
   });
 
-  /// Xóa biến thể sản phẩm.
+  /// Ngừng bán / gỡ biến thể sản phẩm (đặt tồn kho về 0 để bảo toàn lịch sử đơn hàng).
   Future<void> deleteVariant(String variantId);
 
   /// Tải ảnh sản phẩm lên bucket Storage 'product-images'. Trả về storage path.

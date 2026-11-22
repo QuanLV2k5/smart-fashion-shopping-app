@@ -142,6 +142,7 @@ class FakeAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
+    bool updateStock = true,
   }) async {}
 
   @override
@@ -171,7 +172,9 @@ void main() {
   }
 
   group('Admin Dashboard & Access Control Flow', () {
-    testWidgets('Non-admin users see Access Denied view', (tester) async {
+    testWidgets('Non-admin users see Access Denied view on Dashboard', (
+      tester,
+    ) async {
       final fakeRepo = FakeAdminRepository();
 
       await tester.pumpWidget(
@@ -187,6 +190,38 @@ void main() {
       expect(find.text('Quay lại cửa hàng'), findsOneWidget);
       expect(find.text('Bảng điều khiển Admin'), findsNothing);
     });
+
+    testWidgets(
+      'Non-admin users are blocked on all Admin subpages by AdminGuard',
+      (tester) async {
+        final fakeRepo = FakeAdminRepository();
+
+        // Kiểm tra chặn truy cập vào AdminProductsPage
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const AdminProductsPage(),
+            repository: fakeRepo,
+            role: UserRole.customer,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Quyền truy cập bị giới hạn'), findsOneWidget);
+        expect(find.text('Quản lý Sản phẩm & Kho'), findsNothing);
+
+        // Kiểm tra chặn truy cập vào AdminCategoriesPage
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const AdminCategoriesPage(),
+            repository: fakeRepo,
+            role: UserRole.customer,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Quyền truy cập bị giới hạn'), findsOneWidget);
+        expect(find.text('Quản lý Danh mục'), findsNothing);
+      },
+    );
+
 
     testWidgets('Admin user sees Dashboard with menu items and stats', (
       tester,
