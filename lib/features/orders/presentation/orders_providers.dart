@@ -10,7 +10,7 @@ final ordersRepositoryProvider = Provider<OrdersRepository>(
   (ref) => SupabaseOrdersRepository(ref.watch(supabaseClientProvider)),
 );
 
-typedef OrdersQuery = ({String userId, String filter});
+typedef OrdersQuery = ({String userId, String filter, bool admin});
 typedef OrderKey = ({String userId, String orderId});
 
 final ordersListProvider = FutureProvider.autoDispose
@@ -20,7 +20,13 @@ final ordersListProvider = FutureProvider.autoDispose
       }
       return ref
           .watch(ordersRepositoryProvider)
-          .list(query.userId, query.filter, null);
+          .list(query.userId, query.filter, null, admin: query.admin);
+    }, retry: (_, _) => null);
+
+final adminOrderAccessProvider = FutureProvider.autoDispose
+    .family<bool, String>((ref, userId) {
+      if (ref.watch(authenticatedUserIdProvider) != userId) return false;
+      return ref.watch(ordersRepositoryProvider).canManage(userId);
     }, retry: (_, _) => null);
 
 final orderDetailProvider = FutureProvider.autoDispose

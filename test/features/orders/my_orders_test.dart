@@ -42,63 +42,82 @@ OrdersResult page(String number, {bool more = false}) => OrdersResult.fromJson({
 class OrdersBackend implements OrdersRepository {
   Completer<OrdersResult>? nextPage;
   final calls = <(String, String, OrderJson?)>[];
+  final adminCalls = <String>[];
+  final admins = <String>{};
+  final detailReads = <String>[];
   final changes = <OrderChange>[];
   String status = 'pending';
   int version = 1;
+  bool conflict = false;
+
+  @override
+  Future<bool> canManage(String userId) async => admins.contains(userId);
 
   @override
   Future<OrdersResult> list(
     String userId,
     String filter,
-    OrderJson? cursor,
-  ) async {
+    OrderJson? cursor, {
+    bool admin = false,
+  }) async {
+    if (admin) adminCalls.add(filter);
     calls.add((userId, filter, cursor));
     if (cursor != null && nextPage != null) return nextPage!.future;
     return userId == customerA.id ? page('SF-A', more: true) : page('SF-B');
   }
 
   @override
-  Future<OrderDetail> detail(String userId, String orderId) async =>
-      OrderDetail.fromJson({
-        'schema_version': 1,
-        'id': orderId,
-        'order_number': 'SF-DETAIL',
-        'status': status,
-        'version': version,
-        'currency': 'VND',
-        'payment_method': 'cod',
-        'subtotal_vnd': 199000,
-        'shipping_vnd': 25000,
-        'total_vnd': 224000,
-        'delivery_address': {
-          'recipient_name': 'Người nhận từ snapshot',
-          'phone': '0900000000',
-          'address_line': 'Đường thử nghiệm',
-          'ward': 'Phường A',
-          'district': 'Quận A',
-          'city': 'Thành phố A',
+  Future<OrderDetail> detail(String userId, String orderId) async {
+    detailReads.add(userId);
+    return OrderDetail.fromJson({
+      'schema_version': 1,
+      'id': orderId,
+      'order_number': 'SF-DETAIL',
+      'status': status,
+      'version': version,
+      'currency': 'VND',
+      'payment_method': 'cod',
+      'subtotal_vnd': 199000,
+      'shipping_vnd': 25000,
+      'total_vnd': 224000,
+      'delivery_address': {
+        'recipient_name': 'Người nhận từ snapshot',
+        'phone': '0900000000',
+        'address_line': 'Đường thử nghiệm',
+        'ward': 'Phường A',
+        'district': 'Quận A',
+        'city': 'Thành phố A',
+      },
+      'items': [
+        {
+          'product_name': 'Áo từ snapshot',
+          'color': 'Trắng',
+          'size': 'M',
+          'quantity': 1,
+          'line_total_vnd': 199000,
+          'image_paths': <String>[],
         },
-        'items': [
-          {
-            'product_name': 'Áo từ snapshot',
-            'color': 'Trắng',
-            'size': 'M',
-            'quantity': 1,
-            'line_total_vnd': 199000,
-            'image_paths': <String>[],
-          },
-        ],
-        'events': [
-          {'to_status': status, 'created_at': '2026-11-22T03:00:00Z'},
-        ],
-        'allowed_transitions': status == 'pending' ? ['cancelled'] : <String>[],
-      });
+      ],
+      'events': [
+        {'to_status': status, 'created_at': '2026-11-22T03:00:00Z'},
+      ],
+      'allowed_transitions': [
+        if (status == 'pending' && admins.contains(userId)) 'confirmed',
+        if (status == 'pending') 'cancelled',
+        if (status == 'confirmed' && admins.contains(userId)) 'shipping',
+      ],
+    });
+  }
 
   @override
   Future<void> change(String userId, OrderChange change) async {
     changes.add(change);
     status = change.target.name;
     version++;
+    if (conflict) {
+      conflict = false;
+      throw const OrdersFailure('SF_ORDER_VERSION_CONFLICT');
+    }
   }
 }
 
@@ -127,6 +146,70 @@ Future<void> open(
 }
 
 void main() {
+  testWidgets('customer cannot open admin list or query admin detail', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository()..setUser(customerB);
+    final backend = OrdersBackend();
+    await open(
+      tester,
+      auth,
+      backend,
+      const Column(
+        children: [
+          Expanded(child: MyOrdersPage(admin: true)),
+          Expanded(child: OrderDetailPage(orderId: 'admin-order', admin: true)),
+        ],
+      ),
+    );
+    expect(find.text('Bạn không có quyền quản lý đơn hàng.'), findsNWidgets(2));
+    expect(backend.calls, isEmpty);
+    expect(backend.detailReads, isEmpty);
+  });
+
+  testWidgets(
+    'admin pending filter uses pending and version conflict reloads actions',
+    (tester) async {
+      final auth = FakeAuthRepository()..setUser(customerA);
+      final backend = OrdersBackend()
+        ..admins.add(customerA.id)
+        ..conflict = true;
+      await open(
+        tester,
+        auth,
+        backend,
+        const Column(
+          children: [
+            Expanded(child: MyOrdersPage(admin: true)),
+            Expanded(
+              child: OrderDetailPage(orderId: 'admin-order', admin: true),
+            ),
+          ],
+        ),
+      );
+      await tester.tap(find.text('Chờ duyệt'));
+      await tester.pumpAndSettle();
+      expect(backend.adminCalls, containsAllInOrder(['all', 'pending']));
+      await tester.tap(find.widgetWithText(FilledButton, 'Xác nhận đơn hàng'));
+      await tester.pumpAndSettle();
+      expect(backend.changes, isEmpty);
+      await tester.tap(find.text('Xác nhận cập nhật'));
+      await tester.pumpAndSettle();
+      expect(backend.changes.single.version, 1);
+      expect(find.textContaining('Đơn đã thay đổi'), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'Xác nhận đơn hàng'),
+        findsNothing,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Bắt đầu giao hàng'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Xác nhận cập nhật'));
+      await tester.pumpAndSettle();
+      expect(backend.changes.last.version, 2);
+      expect(backend.changes.last.target, OrderStatus.shipping);
+    },
+  );
+
   testWidgets('late history page cannot cross sessions A → B → A', (
     tester,
   ) async {

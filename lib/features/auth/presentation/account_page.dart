@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/store_scaffold.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../../profile/presentation/widgets/avatar_selector_sheet.dart';
+import '../../orders/presentation/orders_providers.dart';
 import 'auth_controller.dart';
 import 'auth_providers.dart';
 import 'widgets/auth_widgets.dart';
@@ -17,9 +18,10 @@ class AccountPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user =
-        ref.watch(authSessionProvider).value ??
-        ref.read(authRepositoryProvider).currentUser;
+    final session = ref.watch(authSessionProvider);
+    final user = session.hasValue
+        ? session.value
+        : ref.watch(authRepositoryProvider).currentUser;
 
     // Trường hợp tài khoản khách (chưa đăng nhập - Figma GuestAccount 4:304)
     if (user == null) {
@@ -58,6 +60,8 @@ class AccountPage extends ConsumerWidget {
     }
 
     final profileAsync = ref.watch(userProfileProvider);
+    final isAdmin =
+        ref.watch(adminOrderAccessProvider(user.id)).asData?.value == true;
     final loadedProfile = profileAsync.asData?.value;
     final profile = loadedProfile?.id == user.id ? loadedProfile : null;
 
@@ -188,6 +192,15 @@ class AccountPage extends ConsumerWidget {
                     subtitle: 'Theo dõi đơn hàng đã đặt',
                     onTap: () => context.push('/account/orders'),
                   ),
+                  if (isAdmin) ...[
+                    const Divider(height: 1, color: AppColors.outline),
+                    _AccountMenuItem(
+                      icon: Icons.assignment_outlined,
+                      title: 'Quản lý đơn hàng',
+                      subtitle: 'Duyệt và cập nhật trạng thái đơn',
+                      onTap: () => context.push('/admin/orders'),
+                    ),
+                  ],
                 ],
               ),
             ),

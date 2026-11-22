@@ -8,16 +8,27 @@ import '../../../core/widgets/shop_page_scaffold.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../domain/checkout.dart';
 import '../domain/orders.dart';
+import 'admin_orders_gate.dart';
 import 'checkout_page.dart';
 import 'my_orders_page.dart';
 import 'orders_providers.dart';
 
 class OrderDetailPage extends ConsumerWidget {
-  const OrderDetailPage({required this.orderId, super.key});
+  const OrderDetailPage({required this.orderId, this.admin = false, super.key});
   final String orderId;
+  final bool admin;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (admin) {
+      return AdminOrdersGate(
+        builder: (userId) => _Detail(
+          (userId: userId, orderId: orderId),
+          admin: true,
+          key: ValueKey((userId, orderId)),
+        ),
+      );
+    }
     final userId = ref.watch(authenticatedUserIdProvider);
     return userId == null
         ? const SizedBox.shrink()
@@ -29,8 +40,9 @@ class OrderDetailPage extends ConsumerWidget {
 }
 
 class _Detail extends ConsumerStatefulWidget {
-  const _Detail(this.orderKey, {super.key});
+  const _Detail(this.orderKey, {this.admin = false, super.key});
   final OrderKey orderKey;
+  final bool admin;
 
   @override
   ConsumerState<_Detail> createState() => _DetailState();
@@ -43,34 +55,94 @@ class _DetailState extends ConsumerState<_Detail> {
 
   bool get _active =>
       mounted &&
-      ref.read(authenticatedUserIdProvider) == widget.orderKey.userId;
+      ref.read(authenticatedUserIdProvider) == widget.orderKey.userId &&
+      (!widget.admin ||
+          ref
+                  .read(adminOrderAccessProvider(widget.orderKey.userId))
+                  .asData
+                  ?.value ==
+              true);
 
-  Future<void> _confirmCancellation(OrderDetail detail) async {
-    final confirmed = await showDialog<bool>(
+  Future<void> _confirm(OrderDetail detail, OrderStatus target) async {
+    final cancel = target == OrderStatus.cancelled;
+    final admin = widget.admin;
+    final userId = widget.orderKey.userId;
+    String reason = 'customer_requested';
+    final answer = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hủy đơn hàng?'),
-        content: Text('Bạn muốn hủy đơn #${detail.number}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Quay lại'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xác nhận hủy'),
-          ),
-        ],
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          if (ref.watch(authenticatedUserIdProvider) != userId ||
+              (admin &&
+                  ref.watch(adminOrderAccessProvider(userId)).asData?.value !=
+                      true)) {
+            return AlertDialog(
+              content: const Text('Phiên làm việc đã thay đổi.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Đóng'),
+                ),
+              ],
+            );
+          }
+          return AlertDialog(
+            title: Text(cancel ? 'Hủy đơn hàng?' : _actionLabel(target)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  cancel
+                      ? 'Bạn muốn hủy đơn #${detail.number}?'
+                      : 'Cập nhật đơn #${detail.number} thành ${target.label.toLowerCase()}?',
+                ),
+                if (cancel && admin)
+                  DropdownButtonFormField<String>(
+                    initialValue: reason,
+                    decoration: const InputDecoration(labelText: 'Lý do hủy'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'customer_requested',
+                        child: Text('Khách yêu cầu'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'cannot_fulfill',
+                        child: Text('Không thể giao'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'duplicate_confirmed',
+                        child: Text('Đơn trùng'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) reason = value;
+                    },
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Quay lại'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, cancel ? reason : ''),
+                child: Text(cancel ? 'Xác nhận hủy' : 'Xác nhận cập nhật'),
+              ),
+            ],
+          );
+        },
       ),
     );
-    if (confirmed != true || !_active) return;
+    if (answer == null || !_active) return;
     await _send(
       OrderChange(
         orderId: detail.id,
-        target: OrderStatus.cancelled,
+        target: target,
         version: detail.version,
         requestId: const Uuid().v4(),
-        reason: 'customer_requested',
+        reason: cancel ? answer : null,
       ),
     );
   }
@@ -127,10 +199,16 @@ class _DetailState extends ConsumerState<_Detail> {
     final state = ref.watch(provider);
     final detail = state.asData?.value;
     final pending = _pending;
+    final actions =
+        detail?.allowed
+            .where((status) => widget.admin || status == OrderStatus.cancelled)
+            .toList() ??
+        const <OrderStatus>[];
     return ShopPageScaffold(
       title: detail == null ? 'Chi tiết đơn hàng' : 'Đơn #${detail.number}',
-      onBack: () =>
-          context.canPop() ? context.pop() : context.go('/account/orders'),
+      onBack: () => context.canPop()
+          ? context.pop()
+          : context.go(widget.admin ? '/admin/orders' : '/account/orders'),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
@@ -174,14 +252,29 @@ class _DetailState extends ConsumerState<_Detail> {
               onPressed: _busy ? null : () => _send(pending),
               child: const Text('Thử lại cập nhật'),
             )
-          : detail?.allowed.contains(OrderStatus.cancelled) == true
-          ? OutlinedButton(
-              onPressed: _busy || state.isLoading
-                  ? null
-                  : () => _confirmCancellation(detail!),
-              child: const Text('Hủy đơn'),
+          : actions.isNotEmpty
+          ? Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final action in actions)
+                  FilledButton(
+                    onPressed: _busy || state.isLoading
+                        ? null
+                        : () => _confirm(detail!, action),
+                    child: Text(_actionLabel(action)),
+                  ),
+              ],
             )
           : null,
     );
   }
 }
+
+String _actionLabel(OrderStatus status) => switch (status) {
+  OrderStatus.confirmed => 'Xác nhận đơn hàng',
+  OrderStatus.shipping => 'Bắt đầu giao hàng',
+  OrderStatus.completed => 'Hoàn tất đơn hàng',
+  OrderStatus.cancelled => 'Hủy đơn',
+  OrderStatus.pending => status.label,
+};

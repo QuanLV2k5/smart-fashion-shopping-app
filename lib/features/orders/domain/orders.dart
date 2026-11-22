@@ -114,7 +114,13 @@ class OrderChange {
 }
 
 abstract interface class OrdersRepository {
-  Future<OrdersResult> list(String userId, String filter, OrderJson? cursor);
+  Future<OrdersResult> list(
+    String userId,
+    String filter,
+    OrderJson? cursor, {
+    bool admin = false,
+  });
   Future<OrderDetail> detail(String userId, String orderId);
   Future<void> change(String userId, OrderChange change);
+  Future<bool> canManage(String userId);
 }

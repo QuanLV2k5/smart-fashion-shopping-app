@@ -11,6 +11,7 @@ String authDestination(String? requested) {
         '/account',
         '/account/profile',
         '/account/orders',
+        '/admin/orders',
         '/cart',
         '/checkout',
         '/addresses',

@@ -38,6 +38,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path.startsWith('/account/') ||
           path == '/logout' ||
           path == '/checkout' ||
+          path == '/admin/orders' ||
+          path.startsWith('/admin/orders/') ||
           path == '/addresses' ||
           path.startsWith('/addresses/');
       final authForm = const {
@@ -59,6 +61,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ? '/account/profile'
             : path == '/account/orders' || path.startsWith('/account/orders/')
             ? '/account/orders'
+            : path == '/admin/orders' || path.startsWith('/admin/orders/')
+            ? '/admin/orders'
             : '/account';
         return '/login?next=${Uri.encodeComponent(destination)}';
       }
@@ -80,6 +84,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/account/orders/:orderId',
         builder: (context, state) =>
             OrderDetailPage(orderId: state.pathParameters['orderId']!),
+      ),
+      GoRoute(
+        path: '/admin/orders',
+        builder: (context, state) => const MyOrdersPage(admin: true),
+      ),
+      GoRoute(
+        path: '/admin/orders/:orderId',
+        builder: (context, state) => OrderDetailPage(
+          orderId: state.pathParameters['orderId']!,
+          admin: true,
+        ),
       ),
       GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
       GoRoute(

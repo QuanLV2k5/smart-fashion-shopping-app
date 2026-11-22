@@ -12,13 +12,32 @@ class SupabaseOrdersRepository implements OrdersRepository {
   Future<OrdersResult> list(
     String userId,
     String filter,
-    OrderJson? cursor,
-  ) async => OrdersResult.fromJson(
-    await ordersRpc(client, userId, 'list_my_orders', {
-      'p_filter': filter,
-      'p_cursor': cursor,
-    }),
+    OrderJson? cursor, {
+    bool admin = false,
+  }) async => OrdersResult.fromJson(
+    await ordersRpc(
+      client,
+      userId,
+      admin ? 'list_admin_orders' : 'list_my_orders',
+      {'p_filter': filter, 'p_cursor': cursor},
+    ),
   );
+
+  @override
+  Future<bool> canManage(String userId) async {
+    final backend = client;
+    if (backend == null) return false;
+    final session = backend.auth.currentSession;
+    if (session == null || session.user.id != userId) return false;
+    final row = await backend
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .setHeader('Authorization', 'Bearer ${session.accessToken}')
+        .maybeSingle()
+        .timeout(const Duration(seconds: 25));
+    return row?['role'] == 'admin';
+  }
 
   @override
   Future<OrderDetail> detail(String userId, String orderId) async {

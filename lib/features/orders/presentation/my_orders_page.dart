@@ -8,13 +8,21 @@ import '../../../core/widgets/shop_page_scaffold.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../domain/checkout.dart';
 import '../domain/orders.dart';
+import 'admin_orders_gate.dart';
 import 'orders_providers.dart';
 
 class MyOrdersPage extends ConsumerWidget {
-  const MyOrdersPage({super.key});
+  const MyOrdersPage({this.admin = false, super.key});
+  final bool admin;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (admin) {
+      return AdminOrdersGate(
+        builder: (userId) =>
+            _OrdersList(userId, admin: true, key: ValueKey(userId)),
+      );
+    }
     final userId = ref.watch(authenticatedUserIdProvider);
     return userId == null
         ? const SizedBox.shrink()
@@ -23,8 +31,9 @@ class MyOrdersPage extends ConsumerWidget {
 }
 
 class _OrdersList extends ConsumerStatefulWidget {
-  const _OrdersList(this.userId, {super.key});
+  const _OrdersList(this.userId, {this.admin = false, super.key});
   final String userId;
+  final bool admin;
 
   @override
   ConsumerState<_OrdersList> createState() => _OrdersListState();
@@ -54,7 +63,7 @@ class _OrdersListState extends ConsumerState<_OrdersList> {
     try {
       final next = await ref
           .read(ordersRepositoryProvider)
-          .list(widget.userId, filter, page.nextCursor);
+          .list(widget.userId, filter, page.nextCursor, admin: widget.admin);
       if (mounted &&
           revision == _revision &&
           ref.read(authenticatedUserIdProvider) == widget.userId) {
@@ -82,6 +91,7 @@ class _OrdersListState extends ConsumerState<_OrdersList> {
     final provider = ordersListProvider((
       userId: widget.userId,
       filter: _filter,
+      admin: widget.admin,
     ));
     final result = ref.watch(provider);
     final page = result.asData?.value;
@@ -89,9 +99,15 @@ class _OrdersListState extends ConsumerState<_OrdersList> {
       _firstPage = page;
       _resetPages();
     }
-    final current = _extended ?? page;
+    final current = page == null ? null : (_extended ?? page);
+    final filters = {
+      'all': 'Tất cả',
+      if (widget.admin) 'pending': 'Chờ duyệt' else 'processing': 'Đang xử lý',
+      'completed': 'Hoàn tất',
+      'cancelled': 'Đã hủy',
+    };
     return ShopPageScaffold(
-      title: 'Đơn hàng của tôi',
+      title: widget.admin ? 'Quản lý đơn hàng' : 'Đơn hàng của tôi',
       onBack: () => context.canPop() ? context.pop() : context.go('/account'),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -109,12 +125,7 @@ class _OrdersListState extends ConsumerState<_OrdersList> {
             Wrap(
               spacing: AppSpacing.xs,
               children: [
-                for (final entry in const {
-                  'all': 'Tất cả',
-                  'processing': 'Đang xử lý',
-                  'completed': 'Hoàn tất',
-                  'cancelled': 'Đã hủy',
-                }.entries)
+                for (final entry in filters.entries)
                   ChoiceChip(
                     label: Text(entry.value),
                     selected: _filter == entry.key,
@@ -143,7 +154,7 @@ class _OrdersListState extends ConsumerState<_OrdersList> {
                     '${order.names.join(' + ')}\n${formatVnd(order.total)} · COD\n${order.status.label}',
                   ),
                   onTap: () => context.push(
-                    '/account/orders/${Uri.encodeComponent(order.id)}',
+                    '${widget.admin ? '/admin' : '/account'}/orders/${Uri.encodeComponent(order.id)}',
                   ),
                 ),
               ),
