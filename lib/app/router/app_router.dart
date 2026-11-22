@@ -17,6 +17,7 @@ import '../../features/ai/presentation/ai_page.dart';
 import '../../features/ai/presentation/photo_outfit_page.dart';
 import '../../features/addresses/presentation/addresses_page.dart';
 import '../../features/addresses/presentation/address_form_page.dart';
+import '../../features/orders/presentation/checkout_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
@@ -26,9 +27,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final user =
-          ref.read(authSessionProvider).value ??
-          ref.read(authRepositoryProvider).currentUser;
+      final user = ref.read(authenticatedUserIdProvider);
       final path = state.matchedLocation;
       final protected =
           path == '/ai' ||
@@ -36,6 +35,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/account' ||
           path.startsWith('/account/') ||
           path == '/logout' ||
+          path == '/checkout' ||
           path == '/addresses' ||
           path.startsWith('/addresses/');
       final authForm = const {
@@ -44,7 +44,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/confirm-email',
       }.contains(path);
       if (user == null && protected) {
-        final destination = path == '/ai' || path == '/ai/photo'
+        final destination =
+            path == '/ai' || path == '/ai/photo' || path == '/checkout'
             ? path
             : path == '/addresses/select' ||
                   (path.startsWith('/addresses/') &&
@@ -63,6 +64,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) => const CheckoutPage(),
+      ),
       GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
       GoRoute(
         path: '/ai/photo',

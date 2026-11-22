@@ -11,6 +11,7 @@ String authDestination(String? requested) {
         '/account',
         '/account/profile',
         '/cart',
+        '/checkout',
         '/addresses',
         '/addresses/select',
       }.contains(uri.path) &&
