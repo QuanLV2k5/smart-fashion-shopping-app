@@ -25,6 +25,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/q06-local"
           cd "$RUNNER_TEMP/q06-local"
           npx --yes supabase@2.75.0 init
+          mkdir -p supabase/migrations
           cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
           # Remove this pinned test-only dependency once #30 is on main.
           # Never apply an unmerged dependency to the shared cloud project.
@@ -34,7 +35,7 @@ jobs:
               git -C "$GITHUB_WORKSPACE" show "cb96dc47f4605cb0f168a1af57611658d17ecb41:supabase/migrations/$file" > "supabase/migrations/$file"
             done
           fi
-          npx --yes supabase@2.75.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/q06-start.log" 2>&1
+          npx --yes supabase@2.75.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/q06-start.log"
           umask 077
           npx --yes supabase@2.75.0 status -o json > "$RUNNER_TEMP/q06-status.json"
       - name: PostgreSQL ownership, completed purchase, RLS and access tests
