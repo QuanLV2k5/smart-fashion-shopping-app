@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-21T21:36:01.9277218+07:00",
+  "project": "xvpdkbzdyevjbvvfeksc",
+  "fixtureSource": "catalog atlas crop, blue Oxford shirt",
+  "checks": [
+    "unauthenticated request rejected: 401",
+    "real Gemini received JPEG bytes and identified an owned top",
+    "live Gemini chat: same-role strictly cheaper pants, shoes retained, keep across turns, locked replacement refused"
+  ],
+  "analysis": {
+    "elapsedMs": 8778,
+    "garment": {
+      "category": "top",
+      "name": "Áo sơ mi dài tay",
+      "color": "Xanh dương nhạt",
+      "pattern": "Trơn",
+      "fit": "Vừa vặn",
+      "details": "Cổ bẻ cài cúc, hàng cúc dọc phía trước, một túi ngực bên trái, tay áo dài có cổ tay cài cúc"
+    },
+    "status": "ok"
+  },
+  "chat": {
+    "message": "Phương án bộ đồ này kết hợp áo sơ mi dài tay màu xanh dương nhạt sẵn có với Quần Chinos Sand màu be và giày Sneaker Everyday. Bộ trang phục mang phong cách công sở lịch sự, gọn gàng, rất thích hợp cho dịp bảo vệ đồ án. Màu be của quần Chinos dễ dàng hòa hợp với sắc xanh nhạt của áo sơ mi và giày trắng, tạo tổng thể trang nhã và chuyên nghiệp trong ngân sách cho phép.",
+    "elapsedMs": 7954,
+    "totalVnd": 578000,
+    "products": [
+      {
+        "code": "SF21",
+        "name": "Quần Chinos Sand",
+        "price_vnd": 219000
+      },
+      {
+        "code": "SF08",
+        "name": "Sneaker Everyday",
+        "price_vnd": 359000
+      }
+    ]
+  },
+  "keepReply": "Tôi đã giữ lại chiếc quần Chinos Sand và giày sneaker theo yêu cầu của bạn cho bộ đồ bảo vệ đồ án.",
+  "lockedReply": "Món này đang được giữ. Bỏ chọn Giữ món trong danh sách rồi thử lại nhé.",
+  "fixtureRemoved": true
+}

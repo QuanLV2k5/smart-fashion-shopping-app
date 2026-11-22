@@ -55,6 +55,7 @@ void main() {
   test('next chỉ chấp nhận route nội bộ đã triển khai', () {
     expect(authDestination('/'), '/');
     expect(authDestination('/account'), '/account');
+    expect(authDestination('/ai/photo'), '/ai/photo');
     for (final destination in [
       'https://evil.example',
       '//evil.example',

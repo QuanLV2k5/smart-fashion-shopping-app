@@ -1,0 +1,3 @@
+[functions.ai-outfits]
+# New signing keys: verify inside the handler with /auth/v1/user before any data/AI access.
+verify_jwt = false
