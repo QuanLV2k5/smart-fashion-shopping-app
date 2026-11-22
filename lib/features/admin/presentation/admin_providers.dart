@@ -207,6 +207,7 @@ class AdminProductController extends AsyncNotifier<void> {
     required String size,
     required String color,
     required int stock,
+    int expectedStockRevision = 0,
     bool updateStock = true,
   }) async {
     state = const AsyncLoading();
@@ -219,6 +220,7 @@ class AdminProductController extends AsyncNotifier<void> {
         size: size,
         color: color,
         stock: stock,
+        expectedStockRevision: expectedStockRevision,
         updateStock: updateStock,
       );
       state = const AsyncData(null);
@@ -227,21 +229,34 @@ class AdminProductController extends AsyncNotifier<void> {
       return true;
     } catch (e, st) {
       state = AsyncError(e, st);
+      if (e is AdminStockConflictFailure) {
+        rethrow;
+      }
       return false;
     }
   }
 
-  Future<bool> deleteVariant(String productId, String variantId) async {
+  Future<bool> deleteVariant(
+    String productId,
+    String variantId, {
+    int expectedStockRevision = 0,
+  }) async {
     state = const AsyncLoading();
     try {
       final repo = ref.read(adminRepositoryProvider);
-      await repo.deleteVariant(variantId);
+      await repo.deleteVariant(
+        variantId,
+        expectedStockRevision: expectedStockRevision,
+      );
       state = const AsyncData(null);
       ref.invalidate(adminProductsProvider);
       ref.invalidate(adminProductDetailProvider(productId));
       return true;
     } catch (e, st) {
       state = AsyncError(e, st);
+      if (e is AdminStockConflictFailure) {
+        rethrow;
+      }
       return false;
     }
   }

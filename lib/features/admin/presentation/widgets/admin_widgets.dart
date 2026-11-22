@@ -221,10 +221,7 @@ class AdminGuard extends ConsumerWidget {
         appBar: AppBar(
           title: const Text(
             'Quản trị Smart Fashion',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
           ),
           backgroundColor: AppColors.ivory,
           elevation: 0,

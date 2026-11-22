@@ -43,6 +43,7 @@ class AdminVariant {
     required this.size,
     required this.color,
     required this.stock,
+    this.stockRevision = 0,
   });
 
   final String id;
@@ -51,6 +52,7 @@ class AdminVariant {
   final String size;
   final String color;
   final int stock;
+  final int stockRevision;
 
   AdminVariant copyWith({
     String? id,
@@ -59,6 +61,7 @@ class AdminVariant {
     String? size,
     String? color,
     int? stock,
+    int? stockRevision,
   }) {
     return AdminVariant(
       id: id ?? this.id,
@@ -67,8 +70,23 @@ class AdminVariant {
       size: size ?? this.size,
       color: color ?? this.color,
       stock: stock ?? this.stock,
+      stockRevision: stockRevision ?? this.stockRevision,
     );
   }
+}
+
+/// Lỗi xung đột phiên bản tồn kho khi cập nhật đồng thời (SF_STOCK_VERSION_CONFLICT)
+class AdminStockConflictFailure extends AdminFailure {
+  const AdminStockConflictFailure(
+    super.message, {
+    this.variantId,
+    this.currentStock,
+    this.currentRevision,
+  });
+
+  final String? variantId;
+  final int? currentStock;
+  final int? currentRevision;
 }
 
 class AdminProduct {

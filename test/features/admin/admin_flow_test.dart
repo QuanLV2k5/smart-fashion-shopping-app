@@ -80,6 +80,12 @@ class FakeAdminRepository implements AdminRepository {
     return idx != -1 ? products[idx] : null;
   }
 
+  bool shouldFailVariantSave = false;
+  bool shouldThrowStockConflict = false;
+  int saveProductCallCount = 0;
+  String? lastSavedProductId;
+  Map<String, dynamic> lastVariantSavePayload = {};
+
   @override
   Future<String> saveProduct({
     String? id,
@@ -92,6 +98,8 @@ class FakeAdminRepository implements AdminRepository {
     required List<String> imagePaths,
     required bool isVisible,
   }) async {
+    saveProductCallCount++;
+    lastSavedProductId = id;
     if (id != null) {
       final idx = products.indexWhere((p) => p.id == id);
       if (idx != -1) {
@@ -142,11 +150,34 @@ class FakeAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
+    int expectedStockRevision = 0,
     bool updateStock = true,
-  }) async {}
+  }) async {
+    lastVariantSavePayload = {
+      'id': id,
+      'productId': productId,
+      'sku': sku,
+      'size': size,
+      'color': color,
+      'stock': stock,
+      'expectedStockRevision': expectedStockRevision,
+      'updateStock': updateStock,
+    };
+    if (shouldThrowStockConflict) {
+      throw const AdminStockConflictFailure(
+        'Xung đột phiên bản tồn kho trên biến thể',
+      );
+    }
+    if (shouldFailVariantSave) {
+      throw const AdminFailure('Lỗi lưu biến thể giả lập');
+    }
+  }
 
   @override
-  Future<void> deleteVariant(String variantId) async {}
+  Future<void> deleteVariant(
+    String variantId, {
+    int expectedStockRevision = 0,
+  }) async {}
 
   @override
   Future<String> uploadProductImage({
@@ -221,7 +252,6 @@ void main() {
         expect(find.text('Quản lý Danh mục'), findsNothing);
       },
     );
-
 
     testWidgets('Admin user sees Dashboard with menu items and stats', (
       tester,
@@ -387,5 +417,223 @@ void main() {
       expect(find.text('Tên sản phẩm không được để trống'), findsOneWidget);
       expect(find.text('Giá sản phẩm không được để trống'), findsOneWidget);
     });
+
+    testWidgets(
+      'Variant save failure keeps form open and shows error without pop',
+      (tester) async {
+        final fakeRepo = FakeAdminRepository(
+          initialCategories: const [
+            AdminCategory(id: 'c1', name: 'Áo', slug: 'ao', isActive: true),
+          ],
+        );
+        fakeRepo.shouldFailVariantSave = true;
+
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const AdminProductFormPage(),
+            repository: fakeRepo,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Điền form
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'VD: SF01, SF02...'),
+          'SF99',
+        );
+        await tester.enterText(
+          find.widgetWithText(
+            TextFormField,
+            'Ví dụ: Áo Sơ Mi Cổ Trụ Vải Linen',
+          ),
+          'Áo Khoác Gió',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Ví dụ: 199000 hoặc 249000'),
+          '350000',
+        );
+
+        // Mở dialog thêm biến thể
+        await tester.ensureVisible(find.text('Thêm biến thể'));
+        await tester.tap(find.text('Thêm biến thể'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'S, M, L, XL hoặc 29, 30, 31...'),
+          'L',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Đen, Trắng, Xanh rêu, Be...'),
+          'Đen',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Số lượng tồn (vd: 50)'),
+          '20',
+        );
+        await tester.tap(
+          find.descendant(of: find.byType(Dialog), matching: find.text('Thêm')),
+        );
+        await tester.pumpAndSettle();
+
+        // Bấm lưu sản phẩm
+        final submitButton = find.text('Đăng bán sản phẩm');
+        await tester.ensureVisible(submitButton);
+        await tester.tap(submitButton);
+        await tester.pumpAndSettle();
+
+        // Form VẪN MỞ và hiển thị thông báo lỗi biến thể
+        expect(find.text('Đăng sản phẩm mới'), findsOneWidget);
+        expect(find.text('SF99'), findsOneWidget);
+        expect(find.text('Áo Khoác Gió'), findsOneWidget);
+        expect(find.textContaining('Lỗi lưu biến thể giả lập'), findsOneWidget);
+
+        // Giờ tắt lỗi và bấm lưu lại -> Thử lại thành công, KHÔNG tạo trùng sản phẩm mới
+        fakeRepo.shouldFailVariantSave = false;
+        ScaffoldMessenger.of(tester.element(find.byType(Scaffold)))
+            .clearSnackBars();
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(submitButton);
+        await tester.tap(submitButton);
+        await tester.pumpAndSettle();
+
+        // Khi lưu lại, saveProduct được gọi với id của sản phẩm vừa tạo (không tạo mới)
+        expect(fakeRepo.lastSavedProductId, 'prod_1');
+        expect(fakeRepo.products.length, 1);
+      },
+    );
+
+    testWidgets(
+      'Direct route loads product data by productId when initialProduct is null',
+      (tester) async {
+        final fakeRepo = FakeAdminRepository(
+          initialCategories: const [
+            AdminCategory(id: 'c1', name: 'Áo', slug: 'ao', isActive: true),
+          ],
+          initialProducts: [
+            AdminProduct(
+              id: 'p_direct',
+              code: 'SF_DIRECT',
+              categoryId: 'c1',
+              name: 'Áo Len Cổ Lọ',
+              description: 'Mô tả len mềm',
+              material: 'Len',
+              priceVnd: 299000,
+              imagePaths: const ['img_direct.png'],
+              isVisible: true,
+              variants: const [
+                AdminVariant(
+                  id: 'v_direct',
+                  productId: 'p_direct',
+                  sku: 'SF_DIRECT_M',
+                  size: 'M',
+                  color: 'Kem',
+                  stock: 12,
+                  stockRevision: 3,
+                ),
+              ],
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const AdminProductFormPage(productId: 'p_direct'),
+            repository: fakeRepo,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Kiểm tra dữ liệu sản phẩm được tải và điền vào form
+        expect(find.text('SF_DIRECT'), findsOneWidget);
+        expect(find.text('Áo Len Cổ Lọ'), findsOneWidget);
+        expect(find.text('299000'), findsOneWidget);
+        expect(find.text('SKU: SF_DIRECT_M • Tồn: 12 chiếc'), findsOneWidget);
+      },
+    );
+
+    testWidgets('Direct route shows not found when productId does not exist', (
+      tester,
+    ) async {
+      final fakeRepo = FakeAdminRepository();
+
+      await tester.pumpWidget(
+        buildTestApp(
+          child: const AdminProductFormPage(productId: 'nonexistent_id'),
+          repository: fakeRepo,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Không tìm thấy sản phẩm'), findsOneWidget);
+      expect(
+        find.text('Sản phẩm không tồn tại hoặc đã bị xóa.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'Stock conflict triggers error notification and prevents silent overwrite',
+      (tester) async {
+        final fakeRepo = FakeAdminRepository(
+          initialCategories: const [
+            AdminCategory(id: 'c1', name: 'Áo', slug: 'ao', isActive: true),
+          ],
+        );
+        fakeRepo.shouldThrowStockConflict = true;
+
+        await tester.pumpWidget(
+          buildTestApp(
+            child: const AdminProductFormPage(),
+            repository: fakeRepo,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'VD: SF01, SF02...'),
+          'SF_CONF',
+        );
+        await tester.enterText(
+          find.widgetWithText(
+            TextFormField,
+            'Ví dụ: Áo Sơ Mi Cổ Trụ Vải Linen',
+          ),
+          'Áo Xung Đột Tồn',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Ví dụ: 199000 hoặc 249000'),
+          '200000',
+        );
+
+        await tester.ensureVisible(find.text('Thêm biến thể'));
+        await tester.tap(find.text('Thêm biến thể'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'S, M, L, XL hoặc 29, 30, 31...'),
+          'M',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Đen, Trắng, Xanh rêu, Be...'),
+          'Xanh',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Số lượng tồn (vd: 50)'),
+          '10',
+        );
+        await tester.tap(
+          find.descendant(of: find.byType(Dialog), matching: find.text('Thêm')),
+        );
+        await tester.pumpAndSettle();
+
+        final submitButton = find.text('Đăng bán sản phẩm');
+        await tester.ensureVisible(submitButton);
+        await tester.tap(submitButton);
+        await tester.pumpAndSettle();
+
+        // Thông báo xung đột xuất hiện, form không đóng
+        expect(find.textContaining('Xung đột phiên bản tồn kho'), findsWidgets);
+        expect(find.text('Đăng sản phẩm mới'), findsOneWidget);
+      },
+    );
   });
 }

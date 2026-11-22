@@ -39,6 +39,7 @@ abstract interface class AdminRepository {
 
   /// Thêm hoặc cập nhật biến thể (size, color, stock, sku).
   /// [updateStock] = false khi chỉ sửa metadata để tránh xung đột tồn kho với đơn hàng.
+  /// [expectedStockRevision] kiểm tra phiên bản tồn khi gọi RPC set_variant_stock.
   Future<void> saveVariant({
     String? id,
     required String productId,
@@ -46,11 +47,12 @@ abstract interface class AdminRepository {
     required String size,
     required String color,
     required int stock,
+    int expectedStockRevision = 0,
     bool updateStock = true,
   });
 
-  /// Ngừng bán / gỡ biến thể sản phẩm (đặt tồn kho về 0 để bảo toàn lịch sử đơn hàng).
-  Future<void> deleteVariant(String variantId);
+  /// Ngừng bán / đặt tồn kho biến thể về 0 (để bảo toàn lịch sử đơn hàng, không DELETE cứng).
+  Future<void> deleteVariant(String variantId, {int expectedStockRevision = 0});
 
   /// Tải ảnh sản phẩm lên bucket Storage 'product-images'. Trả về storage path.
   Future<String> uploadProductImage({

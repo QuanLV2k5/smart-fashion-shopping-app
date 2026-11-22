@@ -114,7 +114,7 @@ class SupabaseAdminRepository implements AdminRepository {
             'id, code, category_id, name, description, material, price_vnd, '
             'image_paths, is_visible, created_at, updated_at, '
             'categories(id, name), '
-            'product_variants(id, product_id, sku, size, color, stock)',
+            'product_variants(*)',
           );
 
       if (categoryId != null && categoryId.isNotEmpty) {
@@ -140,6 +140,7 @@ class SupabaseAdminRepository implements AdminRepository {
             size: vm['size'] as String,
             color: vm['color'] as String,
             stock: (vm['stock'] as num?)?.toInt() ?? 0,
+            stockRevision: (vm['stock_revision'] as num?)?.toInt() ?? 0,
           );
         }).toList();
 
@@ -194,7 +195,7 @@ class SupabaseAdminRepository implements AdminRepository {
             'id, code, category_id, name, description, material, price_vnd, '
             'image_paths, is_visible, created_at, updated_at, '
             'categories(id, name), '
-            'product_variants(id, product_id, sku, size, color, stock)',
+            'product_variants(*)',
           )
           .eq('id', id)
           .maybeSingle()
@@ -215,6 +216,7 @@ class SupabaseAdminRepository implements AdminRepository {
           size: vm['size'] as String,
           color: vm['color'] as String,
           stock: (vm['stock'] as num?)?.toInt() ?? 0,
+          stockRevision: (vm['stock_revision'] as num?)?.toInt() ?? 0,
         );
       }).toList();
 
@@ -317,6 +319,7 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
+  @override
   Future<void> saveVariant({
     String? id,
     required String productId,
@@ -324,32 +327,71 @@ class SupabaseAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
+    int expectedStockRevision = 0,
     bool updateStock = true,
   }) async {
     final backend = _requireClient();
-    final data = <String, dynamic>{
-      'product_id': productId,
-      'sku': sku.trim(),
-      'size': size.trim(),
-      'color': color.trim(),
-    };
-
-    // Khi sửa biến thể hiện có, chỉ cập nhật stock nếu có yêu cầu để tránh xung đột đơn hàng
-    if (id == null || id.isEmpty || updateStock) {
-      data['stock'] = stock;
-    }
 
     try {
       if (id != null && id.isNotEmpty) {
+        // Cập nhật metadata biến thể: sku, size, color (tách riêng, không bao gồm stock)
         await backend
             .from('product_variants')
-            .update(data)
+            .update({
+              'sku': sku.trim(),
+              'size': size.trim(),
+              'color': color.trim(),
+            })
             .eq('id', id)
             .timeout(const Duration(seconds: 25));
+
+        // Nếu có điều chỉnh tồn kho, gọi RPC set_variant_stock có kiểm tra expected revision
+        if (updateStock) {
+          try {
+            await backend
+                .rpc<dynamic>(
+                  'set_variant_stock',
+                  params: {
+                    'p_variant_id': id,
+                    'p_expected_revision': expectedStockRevision,
+                    'p_new_stock': stock,
+                  },
+                )
+                .timeout(const Duration(seconds: 25));
+          } on PostgrestException catch (e) {
+            if (e.code == 'PT409' ||
+                e.message.contains('SF_STOCK_VERSION_CONFLICT')) {
+              throw AdminStockConflictFailure(
+                'Tồn kho của biến thể $sku đã bị thay đổi bởi đơn hàng hoặc phiên khác (xung đột phiên bản tồn). Vui lòng tải lại và xác nhận số lượng tồn mới.',
+                variantId: id,
+                currentStock: stock,
+                currentRevision: expectedStockRevision,
+              );
+            }
+            if (e.code == '42883' ||
+                e.message.contains('function public.set_variant_stock')) {
+              // Fallback khi migration chưa nạp RPC
+              await backend
+                  .from('product_variants')
+                  .update({'stock': stock})
+                  .eq('id', id)
+                  .timeout(const Duration(seconds: 25));
+            } else {
+              rethrow;
+            }
+          }
+        }
       } else {
+        // Thêm biến thể mới có khai báo tồn ban đầu
         await backend
             .from('product_variants')
-            .insert(data)
+            .insert({
+              'product_id': productId,
+              'sku': sku.trim(),
+              'size': size.trim(),
+              'color': color.trim(),
+              'stock': stock,
+            })
             .timeout(const Duration(seconds: 25));
       }
     } on PostgrestException catch (e) {
@@ -371,22 +413,48 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> deleteVariant(String variantId) async {
-    // Không DELETE cứng vì schema không cấp quyền DELETE trên product_variants
-    // và để bảo toàn tính toàn vẹn dữ liệu đơn hàng (Foreign Key).
-    // Thay vào đó cập nhật tồn kho về 0 (ngừng bán).
+  Future<void> deleteVariant(
+    String variantId, {
+    int expectedStockRevision = 0,
+  }) async {
     final backend = _requireClient();
     try {
-      await backend
-          .from('product_variants')
-          .update({'stock': 0})
-          .eq('id', variantId)
-          .timeout(const Duration(seconds: 25));
+      try {
+        await backend
+            .rpc<dynamic>(
+              'set_variant_stock',
+              params: {
+                'p_variant_id': variantId,
+                'p_expected_revision': expectedStockRevision,
+                'p_new_stock': 0,
+              },
+            )
+            .timeout(const Duration(seconds: 25));
+      } on PostgrestException catch (e) {
+        if (e.code == 'PT409' ||
+            e.message.contains('SF_STOCK_VERSION_CONFLICT')) {
+          throw AdminStockConflictFailure(
+            'Tồn kho biến thể đã bị thay đổi bởi đơn hàng. Vui lòng tải lại trước khi đặt tồn về 0.',
+            variantId: variantId,
+            currentRevision: expectedStockRevision,
+          );
+        }
+        if (e.code == '42883' ||
+            e.message.contains('function public.set_variant_stock')) {
+          await backend
+              .from('product_variants')
+              .update({'stock': 0})
+              .eq('id', variantId)
+              .timeout(const Duration(seconds: 25));
+        } else {
+          rethrow;
+        }
+      }
     } on PostgrestException catch (e) {
-      throw AdminFailure('Lỗi cập nhật ngừng bán biến thể: ${e.message}');
+      throw AdminFailure('Lỗi cập nhật tồn kho biến thể: ${e.message}');
     } catch (e) {
       if (e is AdminFailure) rethrow;
-      throw AdminFailure('Không thể cập nhật ngừng bán biến thể: $e');
+      throw AdminFailure('Không thể cập nhật biến thể: $e');
     }
   }
 

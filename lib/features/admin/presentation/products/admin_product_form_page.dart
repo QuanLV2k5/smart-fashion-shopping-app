@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/services/supabase_provider.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/admin_models.dart';
 import '../admin_providers.dart';
@@ -29,30 +31,50 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
   late final TextEditingController _imageUrlController;
 
   String? _selectedCategoryId;
-  late bool _isVisible;
+  bool _isVisible = true;
   final List<String> _imagePaths = [];
   final List<AdminVariant> _variants = [];
+
+  String? _currentProductId;
+  AdminProduct? _loadedProduct;
+  bool _isInitialized = false;
+  bool _isSubmitting = false;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
     super.initState();
-    final p = widget.initialProduct;
-    _codeController = TextEditingController(text: p?.code ?? '');
-    _nameController = TextEditingController(text: p?.name ?? '');
-    _priceController = TextEditingController(
-      text: p != null ? p.priceVnd.toString() : '',
-    );
-    _materialController = TextEditingController(text: p?.material ?? '');
-    _descriptionController = TextEditingController(text: p?.description ?? '');
+    _codeController = TextEditingController();
+    _nameController = TextEditingController();
+    _priceController = TextEditingController();
+    _materialController = TextEditingController();
+    _descriptionController = TextEditingController();
     _imageUrlController = TextEditingController();
 
-    _selectedCategoryId = p?.categoryId;
-    _isVisible = p?.isVisible ?? true;
+    _currentProductId = widget.productId ?? widget.initialProduct?.id;
 
-    if (p != null) {
-      _imagePaths.addAll(p.imagePaths);
-      _variants.addAll(p.variants);
+    if (widget.initialProduct != null) {
+      _populateFromProduct(widget.initialProduct!);
+      _isInitialized = true;
     }
+  }
+
+  void _populateFromProduct(AdminProduct p) {
+    _loadedProduct = p;
+    _currentProductId = p.id;
+    _codeController.text = p.code;
+    _nameController.text = p.name;
+    _priceController.text = p.priceVnd.toString();
+    _materialController.text = p.material;
+    _descriptionController.text = p.description;
+    _selectedCategoryId = p.categoryId;
+    _isVisible = p.isVisible;
+
+    _imagePaths.clear();
+    _imagePaths.addAll(p.imagePaths);
+
+    _variants.clear();
+    _variants.addAll(p.variants);
   }
 
   @override
@@ -66,7 +88,119 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
     super.dispose();
   }
 
-  void _addImage(String url) {
+  Future<void> _pickAndUploadImage({required ImageSource source}) async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: source,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 85,
+    );
+    if (file == null) return;
+
+    final bytes = await file.readAsBytes();
+    // Giới hạn 2MB (2097152 bytes) theo cấu hình bucket product-images
+    if (bytes.length > 2097152) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Dung lượng ảnh vượt quá giới hạn 2MB của bucket product-images.',
+            ),
+            backgroundColor: AppColors.accent,
+          ),
+        );
+      }
+      return;
+    }
+
+    final ext = file.name.split('.').last.toLowerCase();
+    String mimeType = 'image/jpeg';
+    if (ext == 'png') mimeType = 'image/png';
+    if (ext == 'webp') mimeType = 'image/webp';
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final repo = ref.read(adminRepositoryProvider);
+      final cleanName = file.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '');
+      final fileName =
+          'product_${DateTime.now().millisecondsSinceEpoch}_$cleanName';
+      final path = await repo.uploadProductImage(
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: mimeType,
+      );
+
+      if (mounted) {
+        setState(() {
+          _imagePaths.add(path);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tải ảnh lên thành công.'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải ảnh lên: $e'),
+            backgroundColor: AppColors.accent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
+  void _showImageSourcePicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.large),
+        ),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Chọn ảnh từ thư viện'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _pickAndUploadImage(source: ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt_outlined,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Chụp ảnh mới bằng camera'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _pickAndUploadImage(source: ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _addManualImageUrl(String url) {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return;
     setState(() {
@@ -76,9 +210,108 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
   }
 
   void _removeImage(int index) {
+    // Chỉ gỡ khỏi danh sách hiển thị của sản phẩm, không xóa file storage vật lý
+    // để bảo toàn tham chiếu của các đơn hàng đã tạo trước đó.
     setState(() {
       _imagePaths.removeAt(index);
     });
+  }
+
+  Widget _buildImageThumbnail(String path, int index) {
+    Widget imageContent;
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      imageContent = Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Icon(
+          Icons.image_not_supported_outlined,
+          color: AppColors.accent,
+        ),
+      );
+    } else if (path.startsWith('assets/')) {
+      imageContent = Image.asset(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Icon(
+          Icons.image_not_supported_outlined,
+          color: AppColors.accent,
+        ),
+      );
+    } else {
+      String? publicUrl;
+      try {
+        final client = ref.read(supabaseClientProvider);
+        if (client != null) {
+          publicUrl = client.storage.from('product-images').getPublicUrl(path);
+        }
+      } catch (_) {}
+
+      if (publicUrl != null) {
+        imageContent = Image.network(
+          publicUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _buildFallbackThumbnail(path),
+        );
+      } else {
+        imageContent = _buildFallbackThumbnail(path);
+      }
+    }
+
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+          child: Container(
+            width: 80,
+            height: 80,
+            color: AppColors.sage,
+            child: imageContent,
+          ),
+        ),
+        Positioned(
+          top: 2,
+          right: 2,
+          child: InkWell(
+            onTap: () => _removeImage(index),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFallbackThumbnail(String path) {
+    final fileName = path.split('/').last;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      alignment: Alignment.center,
+      color: AppColors.sage,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.checkroom_outlined,
+            color: AppColors.primary,
+            size: 24,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            fileName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 8, color: AppColors.ink),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openVariantDialog([AdminVariant? existing, int? index]) async {
@@ -104,6 +337,8 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCategoryId == null || _selectedCategoryId!.isEmpty) {
@@ -116,6 +351,8 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
       return;
     }
 
+    setState(() => _isSubmitting = true);
+
     final sanitizedPrice = _priceController.text
         .replaceAll('.', '')
         .replaceAll(',', '')
@@ -123,8 +360,10 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
     final priceVnd = int.parse(sanitizedPrice);
 
     final controller = ref.read(adminProductControllerProvider.notifier);
+
+    // Lưu thông tin chung của sản phẩm trước
     final savedProductId = await controller.saveProduct(
-      id: widget.productId ?? widget.initialProduct?.id,
+      id: _currentProductId,
       code: _codeController.text.trim().toUpperCase(),
       categoryId: _selectedCategoryId!,
       name: _nameController.text.trim(),
@@ -135,47 +374,209 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
       isVisible: _isVisible,
     );
 
-    if (savedProductId == null) return;
+    if (savedProductId == null) {
+      setState(() => _isSubmitting = false);
+      return;
+    }
 
-    // Lưu các biến thể cho sản phẩm
+    // Cập nhật ID sản phẩm hiện tại để các lần thử lại sau không tạo thêm sản phẩm mới
+    _currentProductId = savedProductId;
+
+    // Lưu từng biến thể sản phẩm và theo dõi kết quả thực tế
+    final baseProduct = _loadedProduct ?? widget.initialProduct;
+    final List<String> failedVariants = [];
+    String? firstErrorMessage;
+
     for (final variant in _variants) {
-      final initialVariant = widget.initialProduct?.variants
+      final initialVariant = baseProduct?.variants
           .cast<AdminVariant?>()
           .firstWhere((v) => v?.id == variant.id, orElse: () => null);
+
       final stockChanged =
           initialVariant == null || initialVariant.stock != variant.stock;
 
-      await controller.saveVariant(
-        id: variant.id.isNotEmpty ? variant.id : null,
-        productId: savedProductId,
-        sku: variant.sku,
-        size: variant.size,
-        color: variant.color,
-        stock: variant.stock,
-        updateStock: stockChanged,
-      );
+      try {
+        final success = await controller.saveVariant(
+          id: variant.id.isNotEmpty ? variant.id : null,
+          productId: savedProductId,
+          sku: variant.sku,
+          size: variant.size,
+          color: variant.color,
+          stock: variant.stock,
+          expectedStockRevision:
+              initialVariant?.stockRevision ?? variant.stockRevision,
+          updateStock: stockChanged,
+        );
+
+        if (!success) {
+          failedVariants.add(variant.sku);
+        }
+      } on AdminStockConflictFailure catch (e) {
+        failedVariants.add('${variant.sku} (xung đột tồn kho)');
+        firstErrorMessage = e.message;
+      } catch (e) {
+        failedVariants.add(variant.sku);
+        firstErrorMessage ??= e.toString();
+      }
     }
 
-    if (mounted) {
+    setState(() => _isSubmitting = false);
+
+    if (!mounted) return;
+
+    // Nếu có biến thể lưu thất bại: KHÔNG đóng form, giữ nguyên thông tin đang nhập để người dùng thử lại
+    if (failedVariants.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            widget.productId != null || widget.initialProduct != null
-                ? 'Đã cập nhật sản phẩm thành công.'
-                : 'Đã tạo sản phẩm và cập nhật biến thể thành công.',
+            firstErrorMessage ??
+                'Đã lưu thông tin sản phẩm nhưng gặp lỗi khi lưu biến thể: ${failedVariants.join(", ")}. Vui lòng kiểm tra và bấm Lưu để thử lại.',
           ),
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.accent,
+          duration: const Duration(seconds: 5),
         ),
       );
-      context.pop();
+      return;
+    }
+
+    // Tất cả đều thành công
+    final isEditing = widget.productId != null || widget.initialProduct != null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isEditing
+              ? 'Đã cập nhật sản phẩm thành công.'
+              : 'Đã tạo sản phẩm và lưu toàn bộ biến thể thành công.',
+        ),
+        backgroundColor: AppColors.primary,
+      ),
+    );
+    if (mounted) {
+      try {
+        context.pop();
+      } catch (_) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.productId != null || widget.initialProduct != null;
+
+    // Nếu mở trực tiếp route /admin/products/:id/edit mà chưa có initialProduct
+    if (widget.productId != null && widget.initialProduct == null) {
+      final detailAsync = ref.watch(
+        adminProductDetailProvider(widget.productId!),
+      );
+
+      return detailAsync.when(
+        loading: () => const AdminGuard(
+          title: 'Sửa thông tin sản phẩm',
+          child: Scaffold(
+            backgroundColor: AppColors.ivory,
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          ),
+        ),
+        error: (err, _) => AdminGuard(
+          title: 'Sửa thông tin sản phẩm',
+          child: Scaffold(
+            backgroundColor: AppColors.ivory,
+            appBar: AppBar(
+              title: const Text('Sửa thông tin sản phẩm'),
+              backgroundColor: AppColors.ivory,
+              elevation: 0,
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      size: 48,
+                      color: AppColors.accent,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Lỗi tải thông tin sản phẩm: $err',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.ink),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    FilledButton(
+                      onPressed: () => ref.refresh(
+                        adminProductDetailProvider(widget.productId!),
+                      ),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        data: (loadedProduct) {
+          if (loadedProduct == null) {
+            return AdminGuard(
+              title: 'Không tìm thấy sản phẩm',
+              child: Scaffold(
+                backgroundColor: AppColors.ivory,
+                appBar: AppBar(
+                  title: const Text('Không tìm thấy sản phẩm'),
+                  backgroundColor: AppColors.ivory,
+                  elevation: 0,
+                ),
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.inventory_2_outlined,
+                          size: 48,
+                          color: AppColors.muted,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'Sản phẩm không tồn tại hoặc đã bị xóa.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        FilledButton(
+                          onPressed: () => context.pop(),
+                          child: const Text('Quay lại danh sách'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          if (!_isInitialized) {
+            _populateFromProduct(loadedProduct);
+            _isInitialized = true;
+          }
+
+          return _buildFormScaffold(isEditing: true);
+        },
+      );
+    }
+
+    return _buildFormScaffold(isEditing: isEditing);
+  }
+
+  Widget _buildFormScaffold({required bool isEditing}) {
     final state = ref.watch(adminProductControllerProvider);
-    final isLoading = state.isLoading;
+    final isLoading = state.isLoading || _isSubmitting;
     final categoriesAsync = ref.watch(adminCategoriesProvider);
 
     return AdminGuard(
@@ -208,7 +609,7 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
+                      color: const Color(0xFFFDE8E8),
                       borderRadius: BorderRadius.circular(AppRadius.medium),
                       border: Border.all(color: AppColors.accent),
                     ),
@@ -217,12 +618,14 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                         const Icon(
                           Icons.error_outline_rounded,
                           color: AppColors.accent,
-                          size: 20,
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
-                            state.error.toString(),
+                            state.error.toString().replaceFirst(
+                              'Exception: ',
+                              '',
+                            ),
                             style: const TextStyle(
                               color: AppColors.accent,
                               fontSize: 13,
@@ -378,12 +781,13 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                   decoration: const InputDecoration(
                     hintText:
                         'Mô tả kiểu dáng, hướng dẫn phối đồ và bảo quản...',
+                    isDense: true,
                   ),
                 ),
 
                 const SizedBox(height: AppSpacing.md),
 
-                // Switch hiển thị
+                // Switch hiển thị (is_visible)
                 Material(
                   color: AppColors.white,
                   shape: RoundedRectangleBorder(
@@ -394,14 +798,14 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                     value: _isVisible,
                     activeTrackColor: AppColors.primary,
                     title: const Text(
-                      'Trạng thái mở bán (is_visible)',
+                      'Mở bán sản phẩm trên Catalog (is_visible)',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
                     subtitle: const Text(
-                      'Bật để sản phẩm xuất hiện trên Catalog, tắt để tạm ẩn ngừng bán.',
+                      'Bật để sản phẩm xuất hiện cho khách mua. Tắt để tạm ẩn khỏi Catalog (bảo toàn lịch sử đơn hàng cũ).',
                       style: TextStyle(fontSize: 12, color: AppColors.muted),
                     ),
                     onChanged: (val) => setState(() => _isVisible = val),
@@ -410,7 +814,7 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Danh sách ảnh sản phẩm
+                // Danh sách ảnh sản phẩm & Upload
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -418,6 +822,30 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                       'Hình ảnh sản phẩm (${_imagePaths.length})',
                       style: Theme.of(context).textTheme.titleSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _isUploadingImage
+                          ? null
+                          : _showImageSourcePicker,
+                      icon: _isUploadingImage
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(
+                              Icons.add_photo_alternate_outlined,
+                              size: 18,
+                            ),
+                      label: Text(
+                        _isUploadingImage
+                            ? 'Đang tải lên...'
+                            : 'Tải ảnh từ máy',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                      ),
                     ),
                   ],
                 ),
@@ -429,20 +857,20 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                       child: TextField(
                         controller: _imageUrlController,
                         decoration: const InputDecoration(
-                          hintText:
-                              'Nhập đường dẫn ảnh (URL hoặc Storage path)...',
+                          hintText: 'Hoặc nhập URL / Storage path trực tiếp...',
                           isDense: true,
                         ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     ElevatedButton(
-                      onPressed: () => _addImage(_imageUrlController.text),
+                      onPressed: () =>
+                          _addManualImageUrl(_imageUrlController.text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.white,
                       ),
-                      child: const Text('Thêm ảnh'),
+                      child: const Text('Thêm'),
                     ),
                   ],
                 ),
@@ -457,52 +885,7 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                       separatorBuilder: (_, _) =>
                           const SizedBox(width: AppSpacing.sm),
                       itemBuilder: (context, i) {
-                        final path = _imagePaths[i];
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.medium,
-                              ),
-                              child: Container(
-                                width: 80,
-                                height: 80,
-                                color: AppColors.sage,
-                                child: path.startsWith('http')
-                                    ? Image.network(
-                                        path,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) => const Icon(
-                                          Icons.image_not_supported_outlined,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.checkroom_outlined,
-                                        color: AppColors.primary,
-                                      ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 2,
-                              right: 2,
-                              child: InkWell(
-                                onTap: () => _removeImage(i),
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
+                        return _buildImageThumbnail(_imagePaths[i], i);
                       },
                     ),
                   ),
@@ -561,7 +944,7 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
-                          'SKU: ${v.sku} • Tồn: ${v.stock} chiếc${v.stock == 0 ? ' (Hết hàng/Ngừng bán)' : ''}',
+                          'SKU: ${v.sku} • Tồn: ${v.stock} chiếc${v.stock == 0 ? ' (Hết hàng)' : ''}',
                           style: TextStyle(
                             color: v.stock == 0
                                 ? AppColors.accent
@@ -583,18 +966,19 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                               icon: Icon(
                                 v.id.isEmpty
                                     ? Icons.delete_outline
-                                    : Icons.block_outlined,
+                                    : Icons.inventory_outlined,
                                 size: 18,
                                 color: AppColors.accent,
                               ),
                               tooltip: v.id.isEmpty
                                   ? 'Xóa biến thể'
-                                  : 'Ngừng bán (đặt tồn kho về 0)',
+                                  : 'Đặt hết hàng (Tồn = 0)',
                               onPressed: () {
                                 setState(() {
                                   if (v.id.isEmpty) {
                                     _variants.removeAt(idx);
                                   } else {
+                                    // Không xóa cứng: Đặt tồn kho về 0 để bảo toàn lịch sử đơn hàng
                                     _variants[idx] = v.copyWith(stock: 0);
                                   }
                                 });

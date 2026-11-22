@@ -120,5 +120,39 @@ void main() {
 
       expect(product.totalStock, 55);
     });
+
+    test('AdminVariant copyWith updates stockRevision and other fields', () {
+      const variant = AdminVariant(
+        id: 'v1',
+        productId: 'p1',
+        sku: 'SKU_01',
+        size: 'M',
+        color: 'Đen',
+        stock: 10,
+        stockRevision: 2,
+      );
+      final updated = variant.copyWith(
+        stock: 15,
+        stockRevision: 3,
+        color: 'Trắng',
+      );
+      expect(updated.stock, 15);
+      expect(updated.stockRevision, 3);
+      expect(updated.color, 'Trắng');
+      expect(updated.sku, 'SKU_01');
+    });
+
+    test('AdminStockConflictFailure stores conflict metadata', () {
+      const failure = AdminStockConflictFailure(
+        'Xung đột phiên bản',
+        variantId: 'v123',
+        currentStock: 5,
+        currentRevision: 4,
+      );
+      expect(failure.message, 'Xung đột phiên bản');
+      expect(failure.variantId, 'v123');
+      expect(failure.currentStock, 5);
+      expect(failure.currentRevision, 4);
+    });
   });
 }

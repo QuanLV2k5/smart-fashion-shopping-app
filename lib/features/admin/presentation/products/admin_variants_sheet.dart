@@ -71,6 +71,7 @@ class _AdminVariantDialogState extends State<AdminVariantDialog> {
       size: _sizeController.text.trim(),
       color: _colorController.text.trim(),
       stock: int.parse(_stockController.text.trim()),
+      stockRevision: widget.initialVariant?.stockRevision ?? 0,
     );
 
     Navigator.of(context).pop(variant);
