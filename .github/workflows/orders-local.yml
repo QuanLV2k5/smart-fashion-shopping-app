@@ -7,6 +7,8 @@ on:
       - 'supabase/config.toml'
       - 'supabase/migrations/**'
       - 'supabase/tests/**'
+      - 'lib/features/orders/**'
+      - 'test/features/orders/**'
   workflow_dispatch:
 
 permissions:
@@ -42,3 +44,13 @@ jobs:
             psql --dbname "$db_url" -X -v ON_ERROR_STOP=1 -f "supabase/tests/$sql"
           done
           python3 supabase/tests/orders_rest.py --bootstrap "$status_json"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.5'
+          cache: true
+      - name: Run Flutter acceptance against local Supabase
+        run: |
+          flutter pub get --enforce-lockfile
+          ORDERS_SUPABASE_STATUS="$RUNNER_TEMP/orders-supabase.json" \
+            flutter test --no-pub test/features/orders/orders_supabase_acceptance_test.dart
