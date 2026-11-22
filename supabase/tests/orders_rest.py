@@ -125,6 +125,7 @@ class OrdersTest:
             "p_variant_id": variant["id"], "p_expected_revision": variant["stock_revision"], "p_new_stock": 1
         })
         quotes = {}
+        address_ids = {}
         for role in ("A", "B"):
             expect(self.rpc(role, "list_my_orders")["items"] == [], f"{role} must be a fresh test account")
             expect(self.rpc(role, "get_cart")["items"] == [], f"{role} must have an empty cart")
@@ -132,6 +133,7 @@ class OrdersTest:
                 "recipient_name": f"Orders test {role}", "phone": "0900000001", "address_line": "1 Fixture Street",
                 "ward": "Fixture Ward", "district": "Fixture District", "city": "Fixture City",
             }, status=201)[0]
+            address_ids[role] = address["id"]
             self.rpc(role, "mutate_cart", {
                 "p_variant_id": variant["id"], "p_quantity": 1, "p_operation": "add", "p_request_id": str(uuid4())
             })
@@ -172,7 +174,31 @@ class OrdersTest:
         stock = self.http("ADMIN", f"product_variants?id=eq.{variant['id']}&select=stock")[0]["stock"]
         expect(final["version"] == 2 and len(final["events"]) == 2 and stock == int(final_status == "cancelled")
                and final["status"] == final_status == changed["result"]["status"], "transition committed once")
-        print("PASS: REST JWT ownership, admin authorization, last-unit race and status-version race")
+
+        latest = self.http("ADMIN", f"product_variants?id=eq.{variant['id']}&select=stock_revision")[0]
+        self.rpc("ADMIN", "set_variant_stock", {
+            "p_variant_id": variant["id"], "p_expected_revision": latest["stock_revision"], "p_new_stock": 1
+        })
+        new_quote = self.rpc(other, "create_checkout_quote", {"p_address_id": address_ids[other]})
+        placed = self.rpc(other, "place_cod_order", {
+            "p_quote_id": new_quote["quote_id"], "p_request_id": str(uuid4())
+        })
+        order_id = placed["result"]["order_id"]
+
+        def transition(target, version):
+            return {"p_order_id": order_id, "p_target_status": target, "p_expected_version": version,
+                    "p_request_id": str(uuid4())}
+
+        self.rpc(other, "change_order_status", transition("confirmed", 1),
+                 status=409, error="SF_ORDER_TRANSITION_INVALID")
+        self.rpc("ADMIN", "change_order_status", transition("shipping", 1),
+                 status=409, error="SF_ORDER_TRANSITION_INVALID")
+        for version, target in enumerate(("confirmed", "shipping", "completed"), start=1):
+            result = self.rpc("ADMIN", "change_order_status", transition(target, version))["result"]
+            expect(result["version"] == version + 1 and result["status"] == target, "admin transition")
+        detail = self.rpc(other, "get_order", {"p_order_id": order_id})
+        expect(detail["status"] == "completed" and len(detail["events"]) == 4, "owner sees final timeline")
+        print("PASS: REST checkout, replay, JWT isolation, admin transitions, last-unit and version races, stock conflict")
 
 
 if __name__ == "__main__":

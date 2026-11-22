@@ -4,24 +4,24 @@
 
 ## Sổ quyết định
 
-Issue #20 đang mở và chưa có bình luận. Quân duyệt phạm vi tài liệu đề xuất ở PR #25 và yêu cầu chốt D01–D14 trước khi triển khai. Review #27 và #28 thuộc phạm vi đặc tả kiểm thử và kiểm thử đổi phiên. PR #29 được Phúc yêu cầu sửa, gồm stock concurrency và thao tác xóa biến thể. Chỉ ghi Approved khi có xác nhận rõ ràng của Quân cho nội dung từng quyết định và hoàn tất review liên quan theo thiết kế. Khi chốt, ghi nội dung được duyệt, người xác nhận, ngày và permalink. [Review #25](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/25#pullrequestreview-5957379472) · [Review #27](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/27#pullrequestreview-6010435305) · [Review #28](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/28#pullrequestreview-6010439108) · [Review #29](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/29#pullrequestreview-6009221188)
+Issue #20 đang mở. Quân duyệt phạm vi tài liệu đề xuất ở PR #25. Review #27 và #28 thuộc phạm vi đặc tả kiểm thử và kiểm thử đổi phiên. PR #29 được Phúc yêu cầu sửa, gồm stock concurrency và thao tác xóa biến thể. Phúc báo Quân đã xác nhận D01–D14 qua tin nhắn riêng. Cột trạng thái dưới đây theo dõi việc đối chiếu phương án hiện tại với nội dung xác nhận. [Review #25](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/25#pullrequestreview-5957379472) · [Review #27](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/27#pullrequestreview-6010435305) · [Review #28](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/28#pullrequestreview-6010439108) · [Review #29](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/29#pullrequestreview-6009221188)
 
 | ID | Nội dung cần chốt | Review | Trạng thái |
 |---|---|---|---|
-| D01 | Phạm vi giỏ, quote, TTL, giới hạn dòng và quote active | Quân + Hải | Pending Review |
-| D02 | Rule ship 25.000đ cho demo, phạm vi áp dụng và version | Quân, Hải đối chiếu UI | Pending Review |
-| D03 | Điều kiện stale theo giỏ, địa chỉ, catalog và giá, việc giữ tồn | Quân + Hải | Pending Review |
-| D04 | Trạng thái, cạnh chuyển, quyền hủy, version và lý do | Quân + Hải | Pending Review |
-| D05 | Thời điểm trừ/hoàn, hoàn đúng một lần và xử lý giỏ sau hủy | Quân + Hải | Pending Review |
-| D06 | Namespace, canonical payload, replay, consume quote và retention receipt | Quân | Pending Review |
-| D07 | Pending theo user, phục hồi restart và lookup khi mất phản hồi | Quân, Hải đối chiếu UI | Pending Review |
-| D08 | FK và xóa/ẩn catalog hoặc user, snapshot địa chỉ, retention PII và ảnh | Quân + Hải | Pending Review |
-| D09 | Giao thức lock giữa Cart, Orders và Admin Catalog, CAS, quyền ghi và người phụ trách migration | Quân + Hải | Pending Review |
-| D10 | Bằng chứng mua hàng đã hoàn tất cho Reviews, giới hạn review và projection công khai | Quân | Pending Review |
-| D11 | Khóa/xóa tài khoản, giữ lịch sử, thời điểm thu hồi quyền admin | Quân | Pending Review |
-| D12 | Tên RPC, DTO, lỗi, giới hạn tiền, phân trang, lọc và timeline | Quân + Hải | Pending Review |
-| D13 | UI hủy, quote stale, kết quả chưa xác định và định dạng mã đơn | Hải + Quân | Pending Review |
-| D14 | Môi trường, JWT, hai kết nối, thứ tự migration, timeout, review/deploy và cleanup | Quân điều phối, cả nhóm xác nhận | Pending Review |
+| D01 | Phạm vi giỏ, quote, TTL, giới hạn dòng và quote active | Quân + Hải | Chưa đối chiếu |
+| D02 | Rule ship 25.000đ cho demo, phạm vi áp dụng và version | Quân, Hải đối chiếu UI | Chưa đối chiếu |
+| D03 | Điều kiện stale theo giỏ, địa chỉ, catalog và giá, việc giữ tồn | Quân + Hải | Chưa đối chiếu |
+| D04 | Trạng thái, cạnh chuyển, quyền hủy, version và lý do | Quân + Hải | Chưa đối chiếu |
+| D05 | Thời điểm trừ/hoàn, hoàn đúng một lần và xử lý giỏ sau hủy | Quân + Hải | Chưa đối chiếu |
+| D06 | Namespace, canonical payload, replay, consume quote và retention receipt | Quân | Chưa đối chiếu |
+| D07 | Pending theo user, phục hồi restart và lookup khi mất phản hồi | Quân, Hải đối chiếu UI | Chưa đối chiếu |
+| D08 | FK và xóa/ẩn catalog hoặc user, snapshot địa chỉ, retention PII và ảnh | Quân + Hải | Chưa đối chiếu |
+| D09 | Giao thức lock giữa Cart, Orders và Admin Catalog, CAS, quyền ghi và người phụ trách migration | Quân + Hải | Chưa đối chiếu |
+| D10 | Bằng chứng mua hàng đã hoàn tất cho Reviews, giới hạn review và projection công khai | Quân | Chưa đối chiếu |
+| D11 | Khóa/xóa tài khoản, giữ lịch sử, thời điểm thu hồi quyền admin | Quân | Chưa đối chiếu |
+| D12 | Tên RPC, DTO, lỗi, giới hạn tiền, phân trang, lọc và timeline | Quân + Hải | Chưa đối chiếu |
+| D13 | UI hủy, quote stale, kết quả chưa xác định và định dạng mã đơn | Hải + Quân | Chưa đối chiếu |
+| D14 | Môi trường, JWT, hai kết nối, thứ tự migration, timeout, review/deploy và cleanup | Quân điều phối, cả nhóm xác nhận | Chưa đối chiếu |
 
 ## D09 và PR #29
 
@@ -92,4 +92,13 @@ Ngày 22/11/2026, PostgreSQL 18.7 local với Auth/Storage tối giản đã ch�
 - Phúc xác nhận Quân đã chốt D01–D14 qua tin nhắn riêng. Bảng trên ghi phương án SQL hiện tại, chờ đối chiếu từng mục khi có nguyên văn. Các kiểm tra kỹ thuật tiếp tục dựa trên SQL hiện tại.
 - Migration `20261122000300_product_images_storage.sql` của PR #29 tại `42d1aa5` đã áp dụng sau tám migration của nhánh Orders trên PostgreSQL local. SQL policy cho phép admin thêm ảnh và anon đọc, đồng thời chặn customer thêm ảnh trên schema Storage mô phỏng. Migration nâng giới hạn từ 2 lên 5 MiB, thay ba policy ghi và để lại cả `product_images_read` lẫn `product_images_public_read`. Hải cần chốt giới hạn và gộp policy đọc trước khi tích hợp. Kiểm thử upload qua Storage API vẫn cần Supabase local. [Review PR #29](https://github.com/QuanLV2k5/smart-fashion-shopping-app/pull/29#pullrequestreview-6011723835)
 - Sau khi Hải chuyển các đường UPDATE của client sang payload metadata và RPC stock, xác nhận client cũ đã ngừng ghi stock trực tiếp. Trong migration phối hợp, thu hồi UPDATE cấp bảng và cấp UPDATE cho `product_id`, `sku`, `size`, `color`; rà quyền kế thừa trước khi phát hành. [Bài diễn tập SQL](../../supabase/tests/orders_stock_cutover.sql) áp dụng thay đổi bên trong transaction rồi rollback. Đã xác minh admin vẫn sửa metadata, tạo variant với tồn ban đầu và chỉnh tồn qua RPC; UPDATE trực tiếp stock/revision bị từ chối, khách không sửa được metadata hoặc gọi RPC stock, checkout và hủy vẫn trừ/hoàn đúng. Migration vận hành sẽ đi sau bản client của Hải.
-- Với Supabase local dùng riêng, khởi động stack và reset database để nạp migrations/seed. Tạo tài khoản A/B/admin qua Auth, cấp quyền admin trên `public.user_roles` ở local rồi lấy access token của cả ba. Chạy `orders.sql`, `orders_stock_cutover.sql` bằng psql và chạy `orders_rest.py` với các biến môi trường ở trên. Bài REST còn kiểm tra ghi thẳng trạng thái bị chặn kể cả với admin, dùng lại request ID với payload khác, và form stock cũ xung đột sau checkout. Lượt kiểm tra hiện tại thiếu Docker, Supabase CLI và psql nên REST/JWT thật ở trạng thái **Not Run**.
+- Với Supabase local dùng riêng, khởi động stack và reset database để nạp migrations/seed. Tạo tài khoản A/B/admin qua Auth, cấp quyền admin trên `public.user_roles` ở local rồi lấy access token của cả ba. Chạy `orders.sql`, `orders_stock_cutover.sql` bằng psql và chạy `orders_rest.py` với các biến môi trường ở trên. Bài REST còn kiểm tra ghi thẳng trạng thái bị chặn kể cả với admin, dùng lại request ID với payload khác, và form stock cũ xung đột sau checkout. Lượt PostgreSQL trực tiếp trước đó chưa chạy REST/JWT thật.
+
+Workflow `Orders local integration` tạo Supabase tạm trên Linux runner, chạy migration và SQL, rồi gọi `orders_rest.py --bootstrap` với file JSON từ `supabase status -o json`. Script chỉ nhận URL loopback, tạo ba tài khoản mới qua Auth và đăng nhập lấy JWT thật. Lượt đầu tại `2737b0a` đạt SQL nền, checkout, rollback, replay, quyền đọc/ghi, diễn tập chuyển quyền stock và hai race qua REST/JWT. Windows đã chạy được Supabase CLI 2.75.0. Docker daemon vẫn chưa có nên bài kiểm thử chạy trên runner Linux. [Kết quả CI](https://github.com/QuanLV2k5/smart-fashion-shopping-app/actions/runs/45020480070)
+
+### Tích hợp Flutter Checkout và Orders
+
+1. Dùng `supabaseClientProvider` dựng repository Orders. Parser kiểm DTO, giữ tiền dạng số nguyên và hiển thị giá, phí, tổng từ server. Dùng cùng nguồn ID phiên với Cart và Addresses. Khi stream báo đăng xuất, ID phiên phải về null ngay cả khi repository Auth còn user cache. Regression test nằm cùng COD-SESSION-02.
+2. Từ `CartPage`, nối CTA checkout khi có địa chỉ đã chọn trong `addressBookProvider`, giỏ đã tải và Cart không có mutation đang chờ hoặc chưa xác định kết quả. Bảo vệ route checkout qua `appRouterProvider` và danh sách đích quay lại trong `auth_redirect.dart`. Lấy quote qua RPC, lưu request ID theo tài khoản trước lần place đầu, dùng cùng payload khi retry. Khi mất phản hồi, lookup receipt và chỉ mở xác nhận khi backend trả đơn đã commit. Refresh giỏ sau thành công. Test đổi tài khoản khi request đang bay, quote stale và retry mất phản hồi.
+3. Thêm lịch sử trong Account và route chi tiết đơn, dùng `list_my_orders` và `get_order` với provider scope theo user. Phân trang bằng cursor server. Hiển thị snapshot và timeline từ Orders, hủy theo cạnh server trả về và gửi expected version. Test deep link, đổi user, refresh sau conflict, và lịch sử còn nguyên sau sửa catalog.
+4. Sau khi Admin Catalog của Hải tích hợp, nối màn danh sách/chi tiết admin vào route guard. Dùng `list_admin_orders` và `get_order`, xác nhận thao tác trước `change_order_status`, xử lý xung đột version bằng tải lại đơn. Role check của Flutter điều khiển truy cập UI. RPC tiếp tục kiểm role và quyền tại database.
