@@ -30,9 +30,8 @@ String authDestination(String? requested) {
   if (!uri.hasQuery &&
       (RegExp(r'^/products/[a-zA-Z0-9_-]{1,80}/reviews?$').hasMatch(uri.path) ||
           RegExp(r'^/admin/users/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path) ||
-          RegExp(
-            r'^/admin/(products|categories)/[a-zA-Z0-9_-]{1,80}/edit$',
-          ).hasMatch(uri.path))) {
+          RegExp(r'^/admin/(products|categories)/[a-zA-Z0-9_-]{1,80}/edit$')
+              .hasMatch(uri.path))) {
     return uri.path;
   }
   if (RegExp(r'^/products/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path) &&
