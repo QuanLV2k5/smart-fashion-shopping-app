@@ -9,13 +9,9 @@ final personalizationRepositoryProvider = Provider<PersonalizationRepository>(
   (ref) => SupabasePersonalizationRepository(ref.watch(supabaseClientProvider)),
 );
 
-final personalizationUserIdProvider = Provider<String?>((ref) {
-  final session = ref.watch(authSessionProvider);
-  return (session.hasValue
-          ? session.value
-          : ref.watch(authRepositoryProvider).currentUser)
-      ?.id;
-});
+final personalizationUserIdProvider = Provider<String?>(
+  (ref) => ref.watch(authenticatedUserIdProvider),
+);
 
 final accountAccessProvider = FutureProvider.autoDispose<AccountAccess>((ref) {
   final userId = ref.watch(personalizationUserIdProvider);

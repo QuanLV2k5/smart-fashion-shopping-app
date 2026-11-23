@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/store_scaffold.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../../profile/presentation/widgets/avatar_selector_sheet.dart';
+import '../../orders/presentation/orders_providers.dart';
 import 'auth_controller.dart';
 import 'auth_providers.dart';
 import 'widgets/auth_widgets.dart';
@@ -60,6 +61,8 @@ class AccountPage extends ConsumerWidget {
     }
 
     final profileAsync = ref.watch(userProfileProvider);
+    final isAdmin =
+        ref.watch(adminOrderAccessProvider(user.id)).asData?.value == true;
     final loadedProfile = profileAsync.asData?.value;
     final profile = loadedProfile?.id == user.id ? loadedProfile : null;
 
@@ -188,16 +191,7 @@ class AccountPage extends ConsumerWidget {
                     icon: Icons.receipt_long_outlined,
                     title: 'Đơn hàng của tôi',
                     subtitle: 'Theo dõi đơn hàng đã đặt',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Tính năng đơn hàng sẽ có trong Sprint 2.',
-                          ),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    onTap: () => context.push('/account/orders'),
                   ),
                   const Divider(height: 1, color: AppColors.outline),
                   _AccountMenuItem(
@@ -216,6 +210,15 @@ class AccountPage extends ConsumerWidget {
                       title: 'Quản lý người dùng',
                       subtitle: 'Hồ sơ và trạng thái truy cập',
                       onTap: () => context.push('/admin/users'),
+                    ),
+                  ],
+                  if (isAdmin) ...[
+                    const Divider(height: 1, color: AppColors.outline),
+                    _AccountMenuItem(
+                      icon: Icons.assignment_outlined,
+                      title: 'Quản lý đơn hàng',
+                      subtitle: 'Duyệt và cập nhật trạng thái đơn',
+                      onTap: () => context.push('/admin/orders'),
                     ),
                   ],
                 ],
