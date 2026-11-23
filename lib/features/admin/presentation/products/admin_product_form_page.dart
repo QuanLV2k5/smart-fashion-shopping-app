@@ -21,6 +21,45 @@ class AdminProductFormPage extends ConsumerStatefulWidget {
       _AdminProductFormPageState();
 }
 
+class _SavedProductSnapshot {
+  const _SavedProductSnapshot({
+    required this.code,
+    required this.categoryId,
+    required this.name,
+    required this.description,
+    required this.material,
+    required this.priceVnd,
+    required this.imagePaths,
+    required this.isVisible,
+  });
+
+  final String code;
+  final String categoryId;
+  final String name;
+  final String description;
+  final String material;
+  final int priceVnd;
+  final List<String> imagePaths;
+  final bool isVisible;
+
+  bool matches(_SavedProductSnapshot other) {
+    if (code != other.code ||
+        categoryId != other.categoryId ||
+        name != other.name ||
+        description != other.description ||
+        material != other.material ||
+        priceVnd != other.priceVnd ||
+        isVisible != other.isVisible ||
+        imagePaths.length != other.imagePaths.length) {
+      return false;
+    }
+    for (var i = 0; i < imagePaths.length; i++) {
+      if (imagePaths[i] != other.imagePaths[i]) return false;
+    }
+    return true;
+  }
+}
+
 class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _codeController;
@@ -34,9 +73,11 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
   bool _isVisible = true;
   final List<String> _imagePaths = [];
   final List<AdminVariant> _variants = [];
+  final Map<String, AdminVariant> _savedVariantsById = {};
 
   String? _currentProductId;
-  AdminProduct? _loadedProduct;
+  _SavedProductSnapshot? _savedProductSnapshot;
+  String? _submitErrorMessage;
   bool _isInitialized = false;
   bool _isSubmitting = false;
   bool _isUploadingImage = false;
@@ -60,7 +101,6 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
   }
 
   void _populateFromProduct(AdminProduct p) {
-    _loadedProduct = p;
     _currentProductId = p.id;
     _codeController.text = p.code;
     _nameController.text = p.name;
@@ -70,11 +110,31 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
     _selectedCategoryId = p.categoryId;
     _isVisible = p.isVisible;
 
-    _imagePaths.clear();
-    _imagePaths.addAll(p.imagePaths);
+    _imagePaths
+      ..clear()
+      ..addAll(p.imagePaths);
 
-    _variants.clear();
-    _variants.addAll(p.variants);
+    _variants
+      ..clear()
+      ..addAll(p.variants);
+
+    _savedVariantsById.clear();
+    for (final v in p.variants) {
+      if (v.id.isNotEmpty) {
+        _savedVariantsById[v.id] = v;
+      }
+    }
+
+    _savedProductSnapshot = _SavedProductSnapshot(
+      code: p.code.trim().toUpperCase(),
+      categoryId: p.categoryId,
+      name: p.name.trim(),
+      description: p.description.trim(),
+      material: p.material.trim(),
+      priceVnd: p.priceVnd,
+      imagePaths: List<String>.unmodifiable(p.imagePaths),
+      isVisible: p.isVisible,
+    );
   }
 
   @override
@@ -351,7 +411,10 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _submitErrorMessage = null;
+    });
 
     final sanitizedPrice = _priceController.text
         .replaceAll('.', '')
@@ -359,90 +422,154 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
         .trim();
     final priceVnd = int.parse(sanitizedPrice);
 
-    final controller = ref.read(adminProductControllerProvider.notifier);
-
-    // Lưu thông tin chung của sản phẩm trước
-    final savedProductId = await controller.saveProduct(
-      id: _currentProductId,
+    final currentSnapshot = _SavedProductSnapshot(
       code: _codeController.text.trim().toUpperCase(),
       categoryId: _selectedCategoryId!,
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
       material: _materialController.text.trim(),
       priceVnd: priceVnd,
-      imagePaths: _imagePaths,
+      imagePaths: List<String>.unmodifiable(_imagePaths),
       isVisible: _isVisible,
     );
 
-    if (savedProductId == null) {
-      setState(() => _isSubmitting = false);
-      return;
+    final controller = ref.read(adminProductControllerProvider.notifier);
+
+    // Chỉ lưu thông tin chung của sản phẩm nếu chưa được tạo hoặc có thay đổi so với lần lưu gần nhất
+    final needsProductSave =
+        _currentProductId == null ||
+        _savedProductSnapshot == null ||
+        !_savedProductSnapshot!.matches(currentSnapshot);
+
+    var activeProductId = _currentProductId;
+    if (needsProductSave) {
+      final savedProductId = await controller.saveProduct(
+        id: _currentProductId,
+        code: currentSnapshot.code,
+        categoryId: currentSnapshot.categoryId,
+        name: currentSnapshot.name,
+        description: currentSnapshot.description,
+        material: currentSnapshot.material,
+        priceVnd: currentSnapshot.priceVnd,
+        imagePaths: currentSnapshot.imagePaths,
+        isVisible: currentSnapshot.isVisible,
+      );
+
+      if (!mounted) return;
+
+      if (savedProductId == null) {
+        final err = ref.read(adminProductControllerProvider).error;
+        setState(() {
+          _isSubmitting = false;
+          _submitErrorMessage =
+              err?.toString().replaceFirst('Exception: ', '') ??
+              'Không thể lưu thông tin sản phẩm. Vui lòng thử lại.';
+        });
+        return;
+      }
+
+      activeProductId = savedProductId;
+      _currentProductId = savedProductId;
+      _savedProductSnapshot = currentSnapshot;
     }
 
-    // Cập nhật ID sản phẩm hiện tại để các lần thử lại sau không tạo thêm sản phẩm mới
-    _currentProductId = savedProductId;
+    final productIdToSave = activeProductId!;
 
-    // Lưu từng biến thể sản phẩm và theo dõi kết quả thực tế
-    final baseProduct = _loadedProduct ?? widget.initialProduct;
+    // Lưu từng biến thể có thay đổi so với baseline đã lưu gần nhất và cập nhật baseline sau mỗi lần thành công
     final List<String> failedVariants = [];
     String? firstErrorMessage;
 
     for (var i = 0; i < _variants.length; i++) {
-      final variant = _variants[i];
-      final initialVariant = baseProduct?.variants
-          .cast<AdminVariant?>()
-          .firstWhere((v) => v?.id == variant.id, orElse: () => null);
+      if (!mounted) return;
 
+      final variant = _variants[i];
+      final isNew = variant.id.isEmpty;
+      final baseline = isNew ? null : _savedVariantsById[variant.id];
+
+      final metadataChanged =
+          isNew ||
+          baseline == null ||
+          baseline.sku.trim() != variant.sku.trim() ||
+          baseline.size.trim() != variant.size.trim() ||
+          baseline.color.trim() != variant.color.trim();
       final stockChanged =
-          initialVariant == null || initialVariant.stock != variant.stock;
+          isNew || baseline == null || baseline.stock != variant.stock;
+
+      // Bỏ qua biến thể đã đồng bộ thành công với máy chủ (tránh gửi lại stock với revision cũ khi retry)
+      if (!isNew && !metadataChanged && !stockChanged) {
+        continue;
+      }
 
       try {
-        final savedVariantId = await controller.saveVariant(
-          id: variant.id.isNotEmpty ? variant.id : null,
-          productId: savedProductId,
+        final savedVariant = await controller.saveVariant(
+          id: isNew ? null : variant.id,
+          productId: productIdToSave,
           sku: variant.sku,
           size: variant.size,
           color: variant.color,
           stock: variant.stock,
           expectedStockRevision:
-              initialVariant?.stockRevision ?? variant.stockRevision,
+              baseline?.stockRevision ?? variant.stockRevision,
+          updateMetadata: metadataChanged,
           updateStock: stockChanged,
         );
 
-        if (savedVariantId == null) {
+        if (!mounted) return;
+
+        if (savedVariant == null) {
+          final controllerErr = ref.read(adminProductControllerProvider).error;
           failedVariants.add(variant.sku);
+          firstErrorMessage ??= controllerErr?.toString().replaceFirst(
+            'Exception: ',
+            '',
+          );
         } else {
-          // Gán lại ID đã lưu cho biến thể để nếu người dùng thử lại sau lỗi ở biến thể khác,
-          // biến thể này đã có ID và sẽ UPDATE thay vì INSERT gây lỗi trùng SKU.
-          _variants[i] = variant.copyWith(id: savedVariantId);
+          // Cập nhật baseline & trạng thái hiển thị bằng kết quả thực tế server trả về (id, stock, stockRevision)
+          _savedVariantsById[savedVariant.id] = savedVariant;
+          setState(() {
+            _variants[i] = savedVariant;
+          });
         }
       } on AdminStockConflictFailure catch (e) {
+        if (!mounted) return;
         failedVariants.add('${variant.sku} (xung đột tồn kho)');
-        firstErrorMessage = e.message;
+        firstErrorMessage ??= e.message;
       } catch (e) {
+        if (!mounted) return;
         failedVariants.add(variant.sku);
-        firstErrorMessage ??= e.toString();
+        firstErrorMessage ??= e.toString().replaceFirst('Exception: ', '');
       }
     }
 
-    setState(() => _isSubmitting = false);
-
     if (!mounted) return;
 
-    // Nếu có biến thể lưu thất bại: KHÔNG đóng form, giữ nguyên thông tin đang nhập để người dùng thử lại
+    // Nếu có biến thể lưu thất bại: KHÔNG đóng form, giữ nguyên bản nháp của các biến thể chưa lưu để người dùng thử lại
     if (failedVariants.isNotEmpty) {
+      final summary =
+          'Đã lưu các phần hợp lệ nhưng gặp lỗi ở biến thể: ${failedVariants.join(", ")}.';
+      final fullMessage =
+          firstErrorMessage != null && firstErrorMessage.isNotEmpty
+          ? '$summary $firstErrorMessage'
+          : '$summary Vui lòng kiểm tra và bấm Lưu để thử lại.';
+
+      setState(() {
+        _isSubmitting = false;
+        _submitErrorMessage = fullMessage;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            firstErrorMessage ??
-                'Đã lưu thông tin sản phẩm nhưng gặp lỗi khi lưu biến thể: ${failedVariants.join(", ")}. Vui lòng kiểm tra và bấm Lưu để thử lại.',
-          ),
+          content: Text(fullMessage),
           backgroundColor: AppColors.accent,
           duration: const Duration(seconds: 5),
         ),
       );
       return;
     }
+
+    setState(() {
+      _isSubmitting = false;
+      _submitErrorMessage = null;
+    });
 
     // Tất cả đều thành công
     final isEditing = widget.productId != null || widget.initialProduct != null;
@@ -471,8 +598,11 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
   Widget build(BuildContext context) {
     final isEditing = widget.productId != null || widget.initialProduct != null;
 
-    // Nếu mở trực tiếp route /admin/products/:id/edit mà chưa có initialProduct
-    if (widget.productId != null && widget.initialProduct == null) {
+    // Nếu mở trực tiếp route /admin/products/:id/edit mà chưa có initialProduct và chưa khởi tạo form.
+    // Khi đã khởi tạo (_isInitialized == true), không để lần tải lại nền ghi đè bản nháp người dùng đang sửa.
+    if (widget.productId != null &&
+        widget.initialProduct == null &&
+        !_isInitialized) {
       final detailAsync = ref.watch(
         adminProductDetailProvider(widget.productId!),
       );
@@ -610,7 +740,7 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (state.hasError) ...[
+                if (_submitErrorMessage != null || state.hasError) ...[
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
@@ -627,10 +757,11 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
-                            state.error.toString().replaceFirst(
-                              'Exception: ',
-                              '',
-                            ),
+                            _submitErrorMessage ??
+                                state.error.toString().replaceFirst(
+                                  'Exception: ',
+                                  '',
+                                ),
                             style: const TextStyle(
                               color: AppColors.accent,
                               fontSize: 13,
@@ -908,7 +1039,7 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     TextButton.icon(
-                      onPressed: () => _openVariantDialog(),
+                      onPressed: isLoading ? null : () => _openVariantDialog(),
                       icon: const Icon(Icons.add_rounded, size: 18),
                       label: const Text('Thêm biến thể'),
                     ),
@@ -965,7 +1096,9 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                                 size: 18,
                                 color: AppColors.primary,
                               ),
-                              onPressed: () => _openVariantDialog(v, idx),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => _openVariantDialog(v, idx),
                             ),
                             if (v.id.isEmpty)
                               IconButton(
@@ -975,11 +1108,13 @@ class _AdminProductFormPageState extends ConsumerState<AdminProductFormPage> {
                                   color: AppColors.accent,
                                 ),
                                 tooltip: 'Gỡ biến thể chưa lưu khỏi danh sách',
-                                onPressed: () {
-                                  setState(() {
-                                    _variants.removeAt(idx);
-                                  });
-                                },
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _variants.removeAt(idx);
+                                        });
+                                      },
                               )
                             else
                               const IconButton(

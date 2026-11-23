@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/supabase_provider.dart';
 import '../../auth/domain/user_role.dart';
-import '../../profile/presentation/profile_providers.dart';
+import '../../auth/presentation/auth_providers.dart';
 import '../data/supabase_admin_repository.dart';
 import '../domain/admin_models.dart';
 import '../domain/admin_repository.dart';
@@ -11,34 +11,48 @@ final adminRepositoryProvider = Provider<AdminRepository>((ref) {
   return SupabaseAdminRepository(ref.watch(supabaseClientProvider));
 });
 
+/// Provider truy vấn vai trò theo từng userId để đổi tài khoản không giữ quyền cũ.
+final adminRoleForUserProvider = FutureProvider.autoDispose
+    .family<UserRole, String>((ref, userId) async {
+      if (ref.watch(authenticatedUserIdProvider) != userId) {
+        return UserRole.customer;
+      }
+
+      final client = ref.watch(supabaseClientProvider);
+      if (client == null) return UserRole.customer;
+
+      try {
+        final response = await client
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (ref.read(authenticatedUserIdProvider) != userId) {
+          return UserRole.customer;
+        }
+        if (response == null) return UserRole.customer;
+        return UserRole.fromString(response['role'] as String?);
+      } catch (_) {
+        return UserRole.customer;
+      }
+    }, retry: (_, _) => null);
+
 /// Provider kiểm tra vai trò người dùng hiện tại (customer / admin).
 final currentUserRoleProvider = FutureProvider.autoDispose<UserRole>((
   ref,
 ) async {
-  final userId = ref.watch(profileUserIdProvider);
+  final userId = ref.watch(authenticatedUserIdProvider);
   if (userId == null) return UserRole.customer;
-
-  final client = ref.watch(supabaseClientProvider);
-  if (client == null) return UserRole.customer;
-
-  try {
-    final response = await client
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-    if (response == null) return UserRole.customer;
-    return UserRole.fromString(response['role'] as String?);
-  } catch (_) {
-    return UserRole.customer;
-  }
-});
+  return ref.watch(adminRoleForUserProvider(userId).future);
+}, retry: (_, _) => null);
 
 /// Provider boolean nhanh: Tài khoản hiện tại có phải Admin không?
+/// Luôn trả false khi đang tải hoặc lỗi để tránh giữ quyền admin của tài khoản trước.
 final isCurrentUserAdminProvider = Provider.autoDispose<bool>((ref) {
   final roleAsync = ref.watch(currentUserRoleProvider);
-  return roleAsync.value == UserRole.admin;
+  if (roleAsync.isLoading || roleAsync.hasError) return false;
+  return roleAsync.asData?.value == UserRole.admin;
 });
 
 /// Provider danh sách toàn bộ danh mục cho Admin.
@@ -175,6 +189,7 @@ class AdminProductController extends AsyncNotifier<void> {
         imagePaths: imagePaths,
         isVisible: isVisible,
       );
+      if (!ref.mounted) return productId;
       state = const AsyncData(null);
       ref.invalidate(adminProductsProvider);
       if (id != null) {
@@ -182,7 +197,7 @@ class AdminProductController extends AsyncNotifier<void> {
       }
       return productId;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (ref.mounted) state = AsyncError(e, st);
       return null;
     }
   }
@@ -191,16 +206,17 @@ class AdminProductController extends AsyncNotifier<void> {
     try {
       final repo = ref.read(adminRepositoryProvider);
       await repo.toggleProductVisibility(id, isVisible);
+      if (!ref.mounted) return true;
       ref.invalidate(adminProductsProvider);
       ref.invalidate(adminProductDetailProvider(id));
       return true;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (ref.mounted) state = AsyncError(e, st);
       return false;
     }
   }
 
-  Future<String?> saveVariant({
+  Future<AdminVariant?> saveVariant({
     String? id,
     required String productId,
     required String sku,
@@ -208,12 +224,13 @@ class AdminProductController extends AsyncNotifier<void> {
     required String color,
     required int stock,
     int expectedStockRevision = 0,
+    bool updateMetadata = true,
     bool updateStock = true,
   }) async {
     state = const AsyncLoading();
     try {
       final repo = ref.read(adminRepositoryProvider);
-      final variantId = await repo.saveVariant(
+      final savedVariant = await repo.saveVariant(
         id: id,
         productId: productId,
         sku: sku,
@@ -221,14 +238,16 @@ class AdminProductController extends AsyncNotifier<void> {
         color: color,
         stock: stock,
         expectedStockRevision: expectedStockRevision,
+        updateMetadata: updateMetadata,
         updateStock: updateStock,
       );
+      if (!ref.mounted) return savedVariant;
       state = const AsyncData(null);
       ref.invalidate(adminProductsProvider);
       ref.invalidate(adminProductDetailProvider(productId));
-      return variantId;
+      return savedVariant;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (ref.mounted) state = AsyncError(e, st);
       if (e is AdminStockConflictFailure) {
         rethrow;
       }
@@ -248,12 +267,13 @@ class AdminProductController extends AsyncNotifier<void> {
         variantId,
         expectedStockRevision: expectedStockRevision,
       );
+      if (!ref.mounted) return true;
       state = const AsyncData(null);
       ref.invalidate(adminProductsProvider);
       ref.invalidate(adminProductDetailProvider(productId));
       return true;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (ref.mounted) state = AsyncError(e, st);
       if (e is AdminStockConflictFailure) {
         rethrow;
       }
@@ -274,10 +294,11 @@ class AdminProductController extends AsyncNotifier<void> {
         fileName: fileName,
         mimeType: mimeType,
       );
+      if (!ref.mounted) return path;
       state = const AsyncData(null);
       return path;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (ref.mounted) state = AsyncError(e, st);
       return null;
     }
   }

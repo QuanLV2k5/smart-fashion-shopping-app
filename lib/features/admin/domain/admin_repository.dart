@@ -38,10 +38,11 @@ abstract interface class AdminRepository {
   Future<void> toggleProductVisibility(String id, bool isVisible);
 
   /// Thêm hoặc cập nhật biến thể (size, color, stock, sku).
-  /// Trả về ID của biến thể đã lưu.
+  /// Trả về [AdminVariant] đã được server xác nhận (bao gồm id, stock và stockRevision thực tế).
+  /// [updateMetadata] = false khi chỉ điều chỉnh tồn kho.
   /// [updateStock] = false khi chỉ sửa metadata để tránh xung đột tồn kho với đơn hàng.
   /// [expectedStockRevision] kiểm tra phiên bản tồn khi gọi RPC set_variant_stock.
-  Future<String> saveVariant({
+  Future<AdminVariant> saveVariant({
     String? id,
     required String productId,
     required String sku,
@@ -49,6 +50,7 @@ abstract interface class AdminRepository {
     required String color,
     required int stock,
     int expectedStockRevision = 0,
+    bool updateMetadata = true,
     bool updateStock = true,
   });
 
