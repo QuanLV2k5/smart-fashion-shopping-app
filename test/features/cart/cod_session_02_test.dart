@@ -63,6 +63,31 @@ Address customerAddress(String id, AuthUser user, String name) =>
     );
 
 void main() {
+  test('signed-out session takes precedence over cached user', () async {
+    final auth = FakeAuthRepository()..setUser(customerA);
+    final session = StreamController<AuthUser?>();
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        authSessionProvider.overrideWith((ref) => session.stream),
+      ],
+    );
+    addTearDown(auth.close);
+    addTearDown(session.close);
+    addTearDown(container.dispose);
+
+    container.listen(currentCartUserIdProvider, (_, _) {});
+    container.listen(addressUserIdProvider, (_, _) {});
+    expect(container.read(currentCartUserIdProvider), customerA.id);
+    expect(container.read(addressUserIdProvider), customerA.id);
+
+    session.add(null);
+    await container.read(authSessionProvider.future);
+    expect(auth.currentUser?.id, customerA.id);
+    expect(container.read(currentCartUserIdProvider), isNull);
+    expect(container.read(addressUserIdProvider), isNull);
+  });
+
   testWidgets('COD-SESSION-02: A → B → A isolates cart and addresses', (
     tester,
   ) async {

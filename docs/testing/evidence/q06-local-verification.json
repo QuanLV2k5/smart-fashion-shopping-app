@@ -1,0 +1,42 @@
+{
+  "issue": 18,
+  "base_commit": "914a38b9db3d99e869414c0c195f9d174bad8d54",
+  "app_version": "0.1.9+10",
+  "figma_file": "EhOyKwsXn0h5srp9YE9Rmp",
+  "figma_nodes": [
+    "4:1120",
+    "4:1106",
+    "4:1801",
+    "5:1528",
+    "5:1555"
+  ],
+  "local_verification": {
+    "format": "PASS",
+    "analyze": "PASS",
+    "flutter_tests": 176,
+    "ai_node_tests": 34,
+    "sql_engine": "Isolated PostgreSQL WASM via PGlite; Auth and Storage schema stubs",
+    "sql_suites": [
+      "foundation.sql",
+      "cart.sql",
+      "cart_verification.sql",
+      "ai_rate_limit.sql",
+      "personalization.sql"
+    ],
+    "orders_dependency": "PR30 cb96dc47f4605cb0f168a1af57611658d17ecb41; real migration and COD/status RPCs in isolated SQL fixture",
+    "screenshots": "Fixture UI only; 4 frames visually inspected",
+    "large_text": "New screens PASS at widths 320/390/430 and text scale 2"
+  },
+  "pending": [
+    "Peer review of migration before shared-cloud deployment",
+    "Cloud and Android user acceptance"
+  ],
+  "pre_existing_observation": "Home page Row at home_page.dart:95 overflows at width 320/text scale 2. Outside Issue18; unchanged. New screen tests start directly at their route.",
+  "backend_ci": {
+    "head": "2238af7e5cdcfd5512dd664514ab38706d6fd23c",
+    "result": "PASS",
+    "url": "https://github.com/QuanLV2k5/smart-fashion-shopping-app/actions/runs/45040674667",
+    "coverage": "Disposable Supabase: five SQL suites plus real Auth/JWT/REST/Storage and existing-session block/unblock",
+    "note": "Backend source unchanged by the subsequent offline-catalog UI guard fix."
+  }
+}

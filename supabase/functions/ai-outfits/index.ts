@@ -42,7 +42,11 @@ Deno.serve(async (req: Request) => {
     const analyzing = data.action === 'analyze';
     const input = analyzing ? parseImage(data.image) : data.action==='chat' ? parseChat(data) : parseInput(data);
     const quota = await fetch(`${url}/rest/v1/rpc/consume_ai_request`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(8000)});
-    if (!quota.ok) throw new AiError('AI_NOT_CONFIGURED',503);
+    if (!quota.ok) {
+      const failure = await quota.json().catch(()=>({}));
+      if (quota.status===403 && failure.message==='SF_ACCESS_BLOCKED') throw new AiError('ACCOUNT_BLOCKED',403);
+      throw new AiError('AI_NOT_CONFIGURED',503);
+    }
     if (await quota.json() !== true) throw new AiError('RATE_LIMITED',429);
     const options = {apiKey:Deno.env.get('GEMINI_API_KEY'),model:Deno.env.get('GEMINI_MODEL') || 'gemini-flash-lite-latest'};
     if (analyzing) return json({...await analyzeGarment(input,options),provider:'gemini',apiVersion:2});

@@ -71,7 +71,7 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-  testWidgets('AI bottom navigation exposes all four destinations', (
+  testWidgets('AI navigation includes favorites and keeps AI beside Account', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -79,16 +79,22 @@ void main() {
         home: Scaffold(bottomNavigationBar: AiBottomNavigation()),
       ),
     );
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
     expect(find.text('AI Stylist'), findsOneWidget);
     final labels = tester
         .widgetList<NavigationDestination>(find.byType(NavigationDestination))
         .map((d) => d.label)
         .toList();
-    expect(labels, ['Trang chủ', 'Khám phá', 'AI Stylist', 'Tài khoản']);
+    expect(labels, [
+      'Trang chủ',
+      'Khám phá',
+      'Yêu thích',
+      'AI Stylist',
+      'Tài khoản',
+    ]);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      2,
+      3,
     );
   });
 }

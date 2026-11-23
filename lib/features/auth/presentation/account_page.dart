@@ -7,9 +7,11 @@ import '../../../core/widgets/store_scaffold.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../../profile/presentation/widgets/avatar_selector_sheet.dart';
 import '../../admin/presentation/admin_providers.dart';
+import '../../orders/presentation/orders_providers.dart';
 import 'auth_controller.dart';
 import 'auth_providers.dart';
 import 'widgets/auth_widgets.dart';
+import '../../personalization/presentation/personalization_providers.dart';
 
 /// Màn hình Tài khoản (Figma Account 4:265 & GuestAccount 4:304).
 /// Hiển thị thông tin hồ sơ người dùng, lối vào chỉnh sửa hồ sơ và đăng xuất.
@@ -18,15 +20,16 @@ class AccountPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user =
-        ref.watch(authSessionProvider).value ??
-        ref.read(authRepositoryProvider).currentUser;
+    final session = ref.watch(authSessionProvider);
+    final user = session.hasValue
+        ? session.value
+        : ref.watch(authRepositoryProvider).currentUser;
 
     // Trường hợp tài khoản khách (chưa đăng nhập - Figma GuestAccount 4:304)
     if (user == null) {
       return StoreScaffold(
         title: 'Tài khoản',
-        selectedIndex: 3,
+        selectedIndex: 4,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
@@ -59,7 +62,11 @@ class AccountPage extends ConsumerWidget {
     }
 
     final profileAsync = ref.watch(userProfileProvider);
-    final isAdmin = ref.watch(isCurrentUserAdminProvider);
+    final isCatalogAdmin = ref.watch(isCurrentUserAdminProvider);
+    final isOrderAdmin =
+        ref.watch(adminOrderAccessProvider(user.id)).asData?.value == true;
+    final access = ref.watch(accountAccessProvider).value;
+    final isUserAdmin = access?.userId == user.id && access?.admin == true;
     final loadedProfile = profileAsync.asData?.value;
     final profile = loadedProfile?.id == user.id ? loadedProfile : null;
 
@@ -76,7 +83,7 @@ class AccountPage extends ConsumerWidget {
 
     return StoreScaffold(
       title: 'Tài khoản',
-      selectedIndex: 3,
+      selectedIndex: 4,
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -188,24 +195,40 @@ class AccountPage extends ConsumerWidget {
                     icon: Icons.receipt_long_outlined,
                     title: 'Đơn hàng của tôi',
                     subtitle: 'Theo dõi đơn hàng đã đặt',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Tính năng đơn hàng sẽ có trong Sprint 2.',
-                          ),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    onTap: () => context.push('/account/orders'),
                   ),
-                  if (isAdmin) ...[
+                  const Divider(height: 1, color: AppColors.outline),
+                  _AccountMenuItem(
+                    icon: Icons.favorite_border_rounded,
+                    title: 'Sản phẩm yêu thích',
+                    subtitle: 'Những món bạn đã lưu',
+                    onTap: () => context.push('/favorites'),
+                  ),
+                  if (isCatalogAdmin) ...[
                     const Divider(height: 1, color: AppColors.outline),
                     _AccountMenuItem(
                       icon: Icons.admin_panel_settings_outlined,
                       title: 'Quản trị cửa hàng',
                       subtitle: 'Quản lý sản phẩm, danh mục & kho',
                       onTap: () => context.push('/admin'),
+                    ),
+                  ],
+                  if (isOrderAdmin) ...[
+                    const Divider(height: 1, color: AppColors.outline),
+                    _AccountMenuItem(
+                      icon: Icons.assignment_outlined,
+                      title: 'Quản lý đơn hàng',
+                      subtitle: 'Duyệt và cập nhật trạng thái đơn',
+                      onTap: () => context.push('/admin/orders'),
+                    ),
+                  ],
+                  if (isUserAdmin) ...[
+                    const Divider(height: 1, color: AppColors.outline),
+                    _AccountMenuItem(
+                      icon: Icons.manage_accounts_outlined,
+                      title: 'Quản lý người dùng',
+                      subtitle: 'Hồ sơ và trạng thái truy cập',
+                      onTap: () => context.push('/admin/users'),
                     ),
                   ],
                 ],

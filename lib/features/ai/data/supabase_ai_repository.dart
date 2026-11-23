@@ -90,6 +90,8 @@ class SupabaseAiRepository implements AiRepository {
     'IMAGE_TOO_LARGE' =>
       'Ảnh lớn hơn 2 MB. Hãy chọn ảnh nhỏ hơn hoặc chụp lại.',
     'UNAUTHORIZED' => 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.',
+    'ACCOUNT_BLOCKED' =>
+      'Tài khoản đang tạm khóa. Vui lòng liên hệ quản trị viên.',
     'AI_NOT_CONFIGURED' =>
       'Dịch vụ tư vấn chưa sẵn sàng. Vui lòng thử lại sau.',
     'AI_KEY_REJECTED' =>

@@ -1,0 +1,50 @@
+name: Personalization local integration
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/personalization-local.yml'
+      - 'supabase/migrations/**'
+      - 'supabase/tests/personalization*'
+      - 'lib/features/personalization/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  personalization-supabase-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Start disposable Supabase with Orders contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/q06-local"
+          cd "$RUNNER_TEMP/q06-local"
+          npx --yes supabase@2.75.0 init
+          mkdir -p supabase/migrations
+          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
+          # Orders comes from merged main; never fetch an unmerged PR as a dependency.
+          test -f supabase/migrations/20261122000100_orders.sql
+          test -f supabase/migrations/20261122000200_admin_stock_revision.sql
+          npx --yes supabase@2.75.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor > "$RUNNER_TEMP/q06-start.log"
+          umask 077
+          npx --yes supabase@2.75.0 status -o json > "$RUNNER_TEMP/q06-status.json"
+      - name: PostgreSQL ownership, completed purchase, RLS and access tests
+        run: |
+          set -euo pipefail
+          export DATABASE_URL="$(python3 -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/q06-status.json"))["DB_URL"])')"
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f supabase/tests/foundation.sql
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f supabase/tests/cart.sql
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f supabase/tests/cart_verification.sql
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f supabase/tests/ai_rate_limit.sql
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f supabase/tests/personalization.sql
+      - name: Auth JWT, REST, Storage and blocked existing-session tests
+        run: python3 supabase/tests/personalization_rest.py --bootstrap "$RUNNER_TEMP/q06-status.json"
+      - name: Stop disposable Supabase
+        if: always()
+        working-directory: ${{ runner.temp }}/q06-local
+        run: npx --yes supabase@2.75.0 stop --no-backup

@@ -1,0 +1,50 @@
+{
+  "issue": 18,
+  "pull_request": 31,
+  "review_id": 6015750316,
+  "reviewer": "TranLenguyenHai",
+  "review_state": "CHANGES_REQUESTED",
+  "reviewed_head": "801399a54abf1728e0246b524fe763b902b32d1c",
+  "merged_main": "cce09cb",
+  "resolved_files": [
+    "lib/app/router/app_router.dart",
+    "lib/features/auth/presentation/account_page.dart"
+  ],
+  "kept_features": [
+    "Checkout COD",
+    "Customer orders and detail",
+    "Admin orders and detail",
+    "Favorites",
+    "Product review list/form",
+    "Admin user list/detail",
+    "Profile and addresses",
+    "AI Stylist beside Account"
+  ],
+  "integration_regressions": [
+    "Four Account menu entries open their actual pages",
+    "Guest guards preserve login destinations",
+    "Both admin menus isolate account A to B to A",
+    "Review form pushed from public reviews remains a private route; pop restores public classification",
+    "Offline account guard can navigate back to the public store"
+  ],
+  "changes_beyond_conflict": [
+    "Use authenticatedUserIdProvider for both Orders and Personalization",
+    "Remove pinned PR30 SQL fallback from CI now that Orders is on main",
+    "Track visible router state for push/pop and defer rebuilds until after the frame"
+  ],
+  "local_verification": {
+    "format": "PASS",
+    "analyze": "PASS",
+    "flutter_tests": 190,
+    "flutter_skipped": 1,
+    "skipped_reason": "Real Supabase Flutter acceptance is run by dedicated CI, not the Windows host",
+    "ai_node_tests": 34,
+    "isolated_sql_suites": 5,
+    "device_acceptance": "NOT RUN",
+    "cloud_deployment": "NOT APPLIED"
+  },
+  "pending": [
+    "CI at new merge commit",
+    "Hai re-review after changes"
+  ]
+}
