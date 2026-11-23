@@ -17,6 +17,9 @@ import '../../features/ai/presentation/ai_page.dart';
 import '../../features/ai/presentation/photo_outfit_page.dart';
 import '../../features/addresses/presentation/addresses_page.dart';
 import '../../features/addresses/presentation/address_form_page.dart';
+import '../../features/personalization/presentation/favorites_page.dart';
+import '../../features/personalization/presentation/reviews_page.dart';
+import '../../features/personalization/presentation/admin_users_page.dart';
 import '../../features/orders/presentation/checkout_page.dart';
 import '../../features/orders/presentation/my_orders_page.dart';
 import '../../features/orders/presentation/order_detail_page.dart';
@@ -37,6 +40,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/account' ||
           path.startsWith('/account/') ||
           path == '/logout' ||
+          path == '/favorites' ||
+          path == '/admin/users' ||
+          path.startsWith('/admin/users/') ||
+          RegExp(r'^/products/[^/]+/review$').hasMatch(path) ||
           path == '/checkout' ||
           path == '/admin/orders' ||
           path.startsWith('/admin/orders/') ||
@@ -49,7 +56,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }.contains(path);
       if (user == null && protected) {
         final destination =
-            path == '/ai' || path == '/ai/photo' || path == '/checkout'
+            path == '/favorites' ||
+                path == '/admin/users' ||
+                path.startsWith('/admin/users/') ||
+                RegExp(r'^/products/[^/]+/review$').hasMatch(path)
+            ? path
+            : path == '/ai' || path == '/ai/photo' || path == '/checkout'
             ? path
             : path == '/addresses/select' ||
                   (path.startsWith('/addresses/') &&
@@ -72,6 +84,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/favorites',
+        builder: (context, state) => const FavoritesPage(),
+      ),
+      GoRoute(
+        path: '/admin/users',
+        builder: (context, state) => const AdminUsersPage(),
+      ),
+      GoRoute(
+        path: '/admin/users/:id',
+        builder: (context, state) =>
+            AdminUserPage(targetId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/products/:id/reviews',
+        builder: (context, state) =>
+            ReviewsPage(productId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/products/:id/review',
+        builder: (context, state) =>
+            ReviewFormPage(productId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: '/checkout',
         builder: (context, state) => const CheckoutPage(),

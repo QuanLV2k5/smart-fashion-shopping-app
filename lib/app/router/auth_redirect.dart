@@ -8,6 +8,8 @@ String authDestination(String? requested) {
         '/',
         '/ai',
         '/ai/photo',
+        '/favorites',
+        '/admin/users',
         '/account',
         '/account/profile',
         '/account/orders',
@@ -18,6 +20,11 @@ String authDestination(String? requested) {
         '/addresses/select',
       }.contains(uri.path) &&
       !uri.hasQuery) {
+    return uri.path;
+  }
+  if (!uri.hasQuery &&
+      (RegExp(r'^/products/[a-zA-Z0-9_-]{1,80}/reviews?$').hasMatch(uri.path) ||
+          RegExp(r'^/admin/users/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path))) {
     return uri.path;
   }
   if (RegExp(r'^/products/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path) &&

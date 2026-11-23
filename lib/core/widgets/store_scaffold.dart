@@ -61,7 +61,13 @@ class StoreScaffold extends StatelessWidget {
                   onDestinationSelected: (index) {
                     if (index != selectedIndex) {
                       context.go(
-                        const ['/', '/explore', '/ai', '/account'][index],
+                        const [
+                          '/',
+                          '/explore',
+                          '/favorites',
+                          '/ai',
+                          '/account',
+                        ][index],
                       );
                     }
                   },
@@ -74,6 +80,11 @@ class StoreScaffold extends StatelessWidget {
                     NavigationDestination(
                       icon: Icon(Icons.search_rounded),
                       label: 'Khám phá',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.favorite_border_rounded),
+                      selectedIcon: Icon(Icons.favorite_rounded),
+                      label: 'Yêu thích',
                     ),
                     NavigationDestination(
                       icon: Icon(Icons.auto_awesome_outlined),

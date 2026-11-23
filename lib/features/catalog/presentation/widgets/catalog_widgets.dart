@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../personalization/presentation/favorite_button.dart';
+
 import '../../../../core/formatters/money.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/catalog.dart';
@@ -215,6 +217,11 @@ class ProductGrid extends StatelessWidget {
                             AspectRatio(
                               aspectRatio: 163 / 190,
                               child: ProductPhoto(product: product),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: FavoriteButton(productId: product.id),
                             ),
                             if (!product.inStock)
                               Positioned(
