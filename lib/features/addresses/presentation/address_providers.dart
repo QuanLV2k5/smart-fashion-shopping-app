@@ -13,12 +13,9 @@ final addressRepositoryProvider = Provider<AddressRepository>(
 final addressSelectionStoreProvider = Provider<AddressSelectionStore>(
   (ref) => PreferencesAddressSelectionStore(ref.watch(preferencesProvider)),
 );
-final addressUserIdProvider = Provider<String?>((ref) {
-  final session = ref.watch(authSessionProvider);
-  return session.hasValue
-      ? session.value?.id
-      : ref.watch(authRepositoryProvider).currentUser?.id;
-});
+final addressUserIdProvider = Provider<String?>(
+  (ref) => ref.watch(authenticatedUserIdProvider),
+);
 
 class AddressBookState {
   AddressBookState({

@@ -12,6 +12,7 @@ import '../domain/cart.dart';
 import 'cart_providers.dart';
 import '../../addresses/presentation/address_providers.dart';
 import '../../addresses/presentation/addresses_page.dart' show addressText;
+import '../../orders/presentation/checkout_providers.dart';
 
 class CartPage extends ConsumerWidget {
   const CartPage({super.key});
@@ -49,6 +50,14 @@ class CartPage extends ConsumerWidget {
     final actions = ref.watch(cartActionsProvider(userId));
     final controller = ref.read(cartActionsProvider(userId).notifier);
     final busy = state.isLoading || actions.isUpdating;
+    final checkout = ref.watch(checkoutProvider(userId));
+    final hasPendingCheckout = checkout.asData?.value.pending != null;
+    final canCheckout =
+        !busy &&
+        !state.hasError &&
+        !controller.hasPending &&
+        selected != null &&
+        cart?.items.isNotEmpty == true;
     Future<void> reload() async {
       if (busy) return;
       if (controller.hasPending) {
@@ -151,8 +160,23 @@ class CartPage extends ConsumerWidget {
       footer: SizedBox(
         width: double.infinity,
         child: FilledButton(
-          onPressed: () => context.go('/explore'),
-          child: const Text('Tiếp tục mua sắm'),
+          onPressed: hasPendingCheckout || canCheckout || checkout.hasError
+              ? () {
+                  ref
+                      .read(checkoutProvider(userId).notifier)
+                      .dismissConfirmation();
+                  context.push('/checkout');
+                }
+              : () => context.go('/explore'),
+          child: Text(
+            hasPendingCheckout
+                ? 'Kiểm tra đơn đang xử lý'
+                : checkout.hasError
+                ? 'Kiểm tra yêu cầu thanh toán'
+                : canCheckout
+                ? 'Thanh toán COD'
+                : 'Tiếp tục mua sắm',
+          ),
         ),
       ),
     );

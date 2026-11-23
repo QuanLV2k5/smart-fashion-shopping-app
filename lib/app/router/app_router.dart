@@ -17,18 +17,19 @@ import '../../features/ai/presentation/ai_page.dart';
 import '../../features/ai/presentation/photo_outfit_page.dart';
 import '../../features/addresses/presentation/addresses_page.dart';
 import '../../features/addresses/presentation/address_form_page.dart';
+import '../../features/orders/presentation/checkout_page.dart';
+import '../../features/orders/presentation/my_orders_page.dart';
+import '../../features/orders/presentation/order_detail_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
   // Phiên thay đổi thì chạy lại redirect, không tạo router mới/mất lịch sử.
-  ref.listen(authSessionProvider, (_, _) => refresh.value++);
+  ref.listen(authenticatedUserIdProvider, (_, _) => refresh.value++);
   final router = GoRouter(
     initialLocation: '/',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final user =
-          ref.read(authSessionProvider).value ??
-          ref.read(authRepositoryProvider).currentUser;
+      final user = ref.read(authenticatedUserIdProvider);
       final path = state.matchedLocation;
       final protected =
           path == '/ai' ||
@@ -36,6 +37,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/account' ||
           path.startsWith('/account/') ||
           path == '/logout' ||
+          path == '/checkout' ||
+          path == '/admin/orders' ||
+          path.startsWith('/admin/orders/') ||
           path == '/addresses' ||
           path.startsWith('/addresses/');
       final authForm = const {
@@ -44,7 +48,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/confirm-email',
       }.contains(path);
       if (user == null && protected) {
-        final destination = path == '/ai' || path == '/ai/photo'
+        final destination =
+            path == '/ai' || path == '/ai/photo' || path == '/checkout'
             ? path
             : path == '/addresses/select' ||
                   (path.startsWith('/addresses/') &&
@@ -54,6 +59,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ? '/addresses'
             : path == '/account/profile'
             ? '/account/profile'
+            : path == '/account/orders' || path.startsWith('/account/orders/')
+            ? '/account/orders'
+            : path == '/admin/orders' || path.startsWith('/admin/orders/')
+            ? '/admin/orders'
             : '/account';
         return '/login?next=${Uri.encodeComponent(destination)}';
       }
@@ -63,6 +72,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: '/account/orders',
+        builder: (context, state) => const MyOrdersPage(),
+      ),
+      GoRoute(
+        path: '/account/orders/:orderId',
+        builder: (context, state) =>
+            OrderDetailPage(orderId: state.pathParameters['orderId']!),
+      ),
+      GoRoute(
+        path: '/admin/orders',
+        builder: (context, state) => const MyOrdersPage(admin: true),
+      ),
+      GoRoute(
+        path: '/admin/orders/:orderId',
+        builder: (context, state) => OrderDetailPage(
+          orderId: state.pathParameters['orderId']!,
+          admin: true,
+        ),
+      ),
       GoRoute(path: '/ai', builder: (context, state) => const AiPage()),
       GoRoute(
         path: '/ai/photo',

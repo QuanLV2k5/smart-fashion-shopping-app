@@ -19,3 +19,10 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final authSessionProvider = StreamProvider<AuthUser?>((ref) {
   return ref.watch(authRepositoryProvider).watchUser();
 });
+
+final authenticatedUserIdProvider = Provider<String?>((ref) {
+  final session = ref.watch(authSessionProvider);
+  return session.hasValue
+      ? session.value?.id
+      : ref.watch(authRepositoryProvider).currentUser?.id;
+});

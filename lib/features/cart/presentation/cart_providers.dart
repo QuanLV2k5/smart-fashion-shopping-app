@@ -10,10 +10,7 @@ final cartRepositoryProvider = Provider<CartRepository>(
   (ref) => SupabaseCartRepository(ref.watch(supabaseClientProvider)),
 );
 final currentCartUserIdProvider = Provider<String?>(
-  (ref) =>
-      (ref.watch(authSessionProvider).value ??
-              ref.watch(authRepositoryProvider).currentUser)
-          ?.id,
+  (ref) => ref.watch(authenticatedUserIdProvider),
 );
 
 /// Mỗi tài khoản có state riêng. UI chỉ đọc family của tài khoản đang đăng nhập.

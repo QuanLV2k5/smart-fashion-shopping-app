@@ -10,7 +10,10 @@ String authDestination(String? requested) {
         '/ai/photo',
         '/account',
         '/account/profile',
+        '/account/orders',
+        '/admin/orders',
         '/cart',
+        '/checkout',
         '/addresses',
         '/addresses/select',
       }.contains(uri.path) &&
