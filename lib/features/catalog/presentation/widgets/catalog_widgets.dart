@@ -21,7 +21,39 @@ class CatalogBody extends ConsumerWidget {
       return Column(
         children: [
           if (state.isLoading) const LinearProgressIndicator(minHeight: 2),
-          if (state.hasError)
+          if (catalog.isFromCache)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.sage,
+                borderRadius: BorderRadius.circular(AppRadius.medium),
+                border: Border.all(color: AppColors.outline),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.cloud_off_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      catalog.cachedAt != null
+                          ? 'Đang xem dữ liệu ngoại tuyến (lưu lúc ${_formatTime(catalog.cachedAt!)}). Kéo xuống để tải lại.'
+                          : 'Đang xem dữ liệu ngoại tuyến. Kéo xuống để tải lại.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (state.hasError && !catalog.isFromCache)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: CatalogMessage(
@@ -358,4 +390,13 @@ class CategoryStrip extends StatelessWidget {
       ],
     ),
   );
+}
+
+String _formatTime(DateTime dt) {
+  final d = dt.toLocal();
+  final h = d.hour.toString().padLeft(2, '0');
+  final m = d.minute.toString().padLeft(2, '0');
+  final day = d.day.toString().padLeft(2, '0');
+  final month = d.month.toString().padLeft(2, '0');
+  return '$h:$m $day/$month';
 }

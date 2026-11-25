@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/store_scaffold.dart';
 import '../../profile/presentation/profile_providers.dart';
 import '../../profile/presentation/widgets/avatar_selector_sheet.dart';
+import '../../admin/presentation/admin_providers.dart';
 import '../../orders/presentation/orders_providers.dart';
 import 'auth_controller.dart';
 import 'auth_providers.dart';
@@ -61,8 +62,11 @@ class AccountPage extends ConsumerWidget {
     }
 
     final profileAsync = ref.watch(userProfileProvider);
-    final isAdmin =
+    final isCatalogAdmin = ref.watch(isCurrentUserAdminProvider);
+    final isOrderAdmin =
         ref.watch(adminOrderAccessProvider(user.id)).asData?.value == true;
+    final access = ref.watch(accountAccessProvider).value;
+    final isUserAdmin = access?.userId == user.id && access?.admin == true;
     final loadedProfile = profileAsync.asData?.value;
     final profile = loadedProfile?.id == user.id ? loadedProfile : null;
 
@@ -200,25 +204,31 @@ class AccountPage extends ConsumerWidget {
                     subtitle: 'Những món bạn đã lưu',
                     onTap: () => context.push('/favorites'),
                   ),
-                  if (ref.watch(accountAccessProvider).value?.userId ==
-                          user.id &&
-                      ref.watch(accountAccessProvider).value?.admin ==
-                          true) ...[
+                  if (isCatalogAdmin) ...[
                     const Divider(height: 1, color: AppColors.outline),
                     _AccountMenuItem(
-                      icon: Icons.manage_accounts_outlined,
-                      title: 'Quản lý người dùng',
-                      subtitle: 'Hồ sơ và trạng thái truy cập',
-                      onTap: () => context.push('/admin/users'),
+                      icon: Icons.admin_panel_settings_outlined,
+                      title: 'Quản trị cửa hàng',
+                      subtitle: 'Quản lý sản phẩm, danh mục & kho',
+                      onTap: () => context.push('/admin'),
                     ),
                   ],
-                  if (isAdmin) ...[
+                  if (isOrderAdmin) ...[
                     const Divider(height: 1, color: AppColors.outline),
                     _AccountMenuItem(
                       icon: Icons.assignment_outlined,
                       title: 'Quản lý đơn hàng',
                       subtitle: 'Duyệt và cập nhật trạng thái đơn',
                       onTap: () => context.push('/admin/orders'),
+                    ),
+                  ],
+                  if (isUserAdmin) ...[
+                    const Divider(height: 1, color: AppColors.outline),
+                    _AccountMenuItem(
+                      icon: Icons.manage_accounts_outlined,
+                      title: 'Quản lý người dùng',
+                      subtitle: 'Hồ sơ và trạng thái truy cập',
+                      onTap: () => context.push('/admin/users'),
                     ),
                   ],
                 ],

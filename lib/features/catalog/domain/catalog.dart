@@ -56,10 +56,14 @@ class CatalogSnapshot {
   CatalogSnapshot({
     required List<CatalogCategory> categories,
     required List<CatalogProduct> products,
+    this.cachedAt,
+    this.isFromCache = false,
   }) : categories = List.unmodifiable(categories),
        products = List.unmodifiable(products);
   final List<CatalogCategory> categories;
   final List<CatalogProduct> products;
+  final DateTime? cachedAt;
+  final bool isFromCache;
 }
 
 abstract interface class CatalogRepository {

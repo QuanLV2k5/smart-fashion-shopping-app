@@ -18,13 +18,20 @@ String authDestination(String? requested) {
         '/checkout',
         '/addresses',
         '/addresses/select',
+        '/admin',
+        '/admin/categories',
+        '/admin/categories/new',
+        '/admin/products',
+        '/admin/products/new',
       }.contains(uri.path) &&
       !uri.hasQuery) {
     return uri.path;
   }
   if (!uri.hasQuery &&
       (RegExp(r'^/products/[a-zA-Z0-9_-]{1,80}/reviews?$').hasMatch(uri.path) ||
-          RegExp(r'^/admin/users/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path))) {
+          RegExp(r'^/admin/users/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path) ||
+          RegExp(r'^/admin/(products|categories)/[a-zA-Z0-9_-]{1,80}/edit$')
+              .hasMatch(uri.path))) {
     return uri.path;
   }
   if (RegExp(r'^/products/[a-zA-Z0-9_-]{1,80}$').hasMatch(uri.path) &&
